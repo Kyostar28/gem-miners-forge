@@ -142,3 +142,293 @@
     color: var(--color-foreground);
   }
 }
+
+/* ============================================================
+   CRYPTOMINER — Dark Web Shop miner card system
+   ============================================================ */
+
+:root {
+  --cm-bg:        #0a0e0a;
+  --cm-panel:     #0f1512;
+  --cm-panel-2:   #131b16;
+  --cm-border:    #1c2a20;
+  --cm-green:     #22ff88;
+  --cm-green-dim: #0aa055;
+  --cm-green-deep:#063a1f;
+  --cm-text:      #b8f5cf;
+  --cm-mute:      #4a7a5c;
+  --cm-mono:      "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* --- tier color variants --- */
+.tier-basic   { --cm-accent: #22ff88; --cm-accent-2: #0aa055; }
+.tier-pro     { --cm-accent: #22e0ff; --cm-accent-2: #0a7fa0; }
+.tier-elite   { --cm-accent: #a855ff; --cm-accent-2: #5b1e9f; }
+.tier-quantum { --cm-accent: #ff4dff; --cm-accent-2: #a01ea0; }
+.tier-mythic  { --cm-accent: #ffcc22; --cm-accent-2: #c98a00; }
+
+/* --- page shell --- */
+.cm-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 700px at 15% -10%, color-mix(in oklab, var(--cm-green) 8%, transparent), transparent 60%),
+    radial-gradient(900px 600px at 100% 100%, color-mix(in oklab, var(--cm-green) 5%, transparent), transparent 60%),
+    var(--cm-bg);
+  color: var(--cm-text);
+  font-family: var(--cm-mono);
+  padding: 2rem 1.25rem 4rem;
+}
+.cm-container { max-width: 1400px; margin: 0 auto; }
+
+.cm-header { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .35rem; }
+.cm-header h1 {
+  font-family: var(--cm-mono);
+  color: var(--cm-green);
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  letter-spacing: .12em;
+  text-shadow: 0 0 12px color-mix(in oklab, var(--cm-green) 60%, transparent);
+}
+.cm-cursor { display: inline-block; width: .55ch; background: var(--cm-green); animation: cm-blink 1s steps(1) infinite; }
+.cm-sub { color: var(--cm-mute); margin-bottom: 1.75rem; }
+
+/* --- filter tabs --- */
+.cm-tabs { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.75rem; }
+.cm-tab {
+  font-family: var(--cm-mono);
+  padding: .55rem 1rem;
+  background: transparent;
+  color: var(--cm-mute);
+  border: 1px solid var(--cm-border);
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: .08em;
+  font-size: .85rem;
+  transition: color .2s, border-color .2s, background .2s, box-shadow .2s;
+}
+.cm-tab:hover { color: var(--cm-text); border-color: var(--cm-green-dim); }
+.cm-tab.is-active {
+  color: #061a10;
+  background: var(--cm-green);
+  border-color: var(--cm-green);
+  box-shadow: 0 0 18px color-mix(in oklab, var(--cm-green) 45%, transparent);
+}
+
+/* --- grid --- */
+.cm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1rem;
+}
+
+/* --- card --- */
+.miner-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--cm-panel);
+  border: 1px solid var(--cm-border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: transform .25s ease, border-color .25s, box-shadow .25s;
+}
+.miner-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--cm-accent);
+  box-shadow: 0 10px 40px -10px color-mix(in oklab, var(--cm-accent) 55%, transparent);
+}
+
+.miner-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .55rem .75rem;
+  border-bottom: 1px solid var(--cm-border);
+  background: var(--cm-panel-2);
+}
+.miner-tier {
+  font-size: .68rem;
+  letter-spacing: .14em;
+  padding: .18rem .5rem;
+  border-radius: 4px;
+  color: var(--cm-accent);
+  background: color-mix(in oklab, var(--cm-accent) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--cm-accent) 40%, transparent);
+}
+.miner-unit {
+  font-size: .68rem;
+  letter-spacing: .14em;
+  color: var(--cm-mute);
+  border: 1px solid var(--cm-border);
+  padding: .18rem .45rem;
+  border-radius: 4px;
+}
+
+/* --- stage: where the sprite lives + all the animated FX --- */
+.miner-stage {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background:
+    radial-gradient(circle at 50% 55%, color-mix(in oklab, var(--cm-accent) 12%, transparent), transparent 65%),
+    linear-gradient(180deg, #050a07 0%, #0a1210 100%);
+  overflow: hidden;
+}
+
+.miner-sprite {
+  position: absolute;
+  inset: 8%;
+  width: 84%;
+  height: 84%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 12px color-mix(in oklab, var(--cm-accent) 55%, transparent));
+  animation: cm-float 4.5s ease-in-out infinite, cm-pulse 2.2s ease-in-out infinite;
+  z-index: 2;
+}
+
+/* pulsing glow orb behind sprite */
+.miner-glow {
+  position: absolute;
+  inset: 20% 20%;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in oklab, var(--cm-accent) 45%, transparent) 0%, transparent 70%);
+  animation: cm-glow 2.5s ease-in-out infinite;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* CRT scanlines overlay */
+.scanlines {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.18) 3px,
+    transparent 4px
+  );
+  mix-blend-mode: overlay;
+  animation: cm-scanmove 8s linear infinite;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* corner LED */
+.miner-led {
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--cm-accent);
+  box-shadow: 0 0 10px var(--cm-accent), 0 0 4px #fff inset;
+  animation: cm-blink 1.4s ease-in-out infinite;
+  z-index: 4;
+}
+
+/* live hex readout */
+.miner-readout {
+  position: absolute;
+  bottom: 8px; left: 10px;
+  font-size: .62rem;
+  letter-spacing: .1em;
+  color: var(--cm-accent);
+  opacity: .7;
+  text-shadow: 0 0 6px var(--cm-accent);
+  z-index: 4;
+}
+
+/* rising hash particles */
+.hash-particles { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.hash-particles span {
+  position: absolute;
+  bottom: -6px;
+  width: 3px; height: 3px;
+  background: var(--cm-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--cm-accent);
+  opacity: 0;
+  animation: cm-rise 3.6s linear infinite;
+}
+.hash-particles span:nth-child(1) { left: 15%; animation-delay: 0s;   }
+.hash-particles span:nth-child(2) { left: 30%; animation-delay: .6s;  }
+.hash-particles span:nth-child(3) { left: 45%; animation-delay: 1.2s; }
+.hash-particles span:nth-child(4) { left: 60%; animation-delay: 1.8s; }
+.hash-particles span:nth-child(5) { left: 75%; animation-delay: 2.4s; }
+.hash-particles span:nth-child(6) { left: 88%; animation-delay: 3.0s; }
+
+/* --- body / stats --- */
+.miner-body { padding: .85rem .95rem 1rem; display: flex; flex-direction: column; gap: .65rem; }
+.miner-name {
+  font-family: var(--cm-mono);
+  color: var(--cm-text);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+.miner-desc { color: var(--cm-mute); font-size: .78rem; line-height: 1.35; min-height: 2.1em; }
+
+.miner-stats { display: flex; justify-content: space-between; align-items: flex-end; gap: .5rem; padding-top: .35rem; border-top: 1px dashed var(--cm-border); }
+.miner-stats--right { text-align: right; }
+.miner-stats__label { color: var(--cm-mute); font-size: .62rem; letter-spacing: .14em; margin-bottom: .15rem; }
+.miner-stats__value { color: var(--cm-accent); font-weight: 700; font-size: .92rem; letter-spacing: .04em; text-shadow: 0 0 6px color-mix(in oklab, var(--cm-accent) 40%, transparent); }
+.bolt { display: inline-block; animation: cm-bolt 1.2s ease-in-out infinite; }
+
+.miner-buy {
+  margin-top: .25rem;
+  font-family: var(--cm-mono);
+  padding: .55rem;
+  background: transparent;
+  border: 1px solid var(--cm-accent);
+  color: var(--cm-accent);
+  border-radius: 6px;
+  letter-spacing: .16em;
+  font-size: .78rem;
+  cursor: pointer;
+  transition: background .18s, color .18s, box-shadow .18s;
+}
+.miner-buy:hover {
+  background: var(--cm-accent);
+  color: #061a10;
+  box-shadow: 0 0 18px color-mix(in oklab, var(--cm-accent) 55%, transparent);
+}
+
+/* --- keyframes --- */
+@keyframes cm-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+@keyframes cm-pulse {
+  0%, 100% { filter: drop-shadow(0 0 8px  color-mix(in oklab, var(--cm-accent) 45%, transparent)); }
+  50%      { filter: drop-shadow(0 0 20px color-mix(in oklab, var(--cm-accent) 85%, transparent)); }
+}
+@keyframes cm-glow {
+  0%, 100% { opacity: .55; transform: scale(1); }
+  50%      { opacity: .95; transform: scale(1.08); }
+}
+@keyframes cm-scanmove {
+  from { background-position: 0 0; }
+  to   { background-position: 0 100px; }
+}
+@keyframes cm-blink {
+  0%, 60%, 100% { opacity: 1; }
+  70%, 90%      { opacity: .25; }
+}
+@keyframes cm-bolt {
+  0%, 100% { transform: scale(1);   filter: brightness(1); }
+  50%      { transform: scale(1.2); filter: brightness(1.6); }
+}
+@keyframes cm-rise {
+  0%   { transform: translateY(0)     scale(1);   opacity: 0; }
+  15%  { opacity: 1; }
+  100% { transform: translateY(-260px) scale(.4); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .miner-sprite,
+  .miner-glow,
+  .scanlines,
+  .miner-led,
+  .hash-particles span,
+  .bolt,
+  .cm-cursor { animation: none !important; }
+}
+
