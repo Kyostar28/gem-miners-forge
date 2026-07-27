@@ -1,24 +1,70 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { MINERS, TIER_ORDER, type Tier } from "@/data/miners";
+import { MinerCard } from "@/components/MinerCard";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Dark Web Shop — CryptoMiner" },
+      { name: "description", content: "Purchase virtual mining hardware — 50 unique miners from USB sticks to legendary quantum rigs. Increase your hash rate." },
+      { property: "og:title", content: "Dark Web Shop — CryptoMiner" },
+      { property: "og:description", content: "50 unique virtual miners for sale. Basic to Mythic tier — every rig animated and ready to hash." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: Shop,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+type Filter = "ALL" | Tier;
+
+function Shop() {
+  const [filter, setFilter] = useState<Filter>("ALL");
+
+  const filtered = useMemo(
+    () => (filter === "ALL" ? MINERS : MINERS.filter((m) => m.tier === filter)),
+    [filter],
+  );
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="cm-shell">
+      <div className="cm-container">
+        <div className="cm-header">
+          <span aria-hidden>🛒</span>
+          <h1>DARK WEB SHOP<span className="cm-cursor">&nbsp;</span></h1>
+        </div>
+        <p className="cm-sub">Purchase hardware to increase your hash rate. — 50 units in stock.</p>
+
+        <nav className="cm-tabs" aria-label="Filter miners by tier">
+          <button
+            type="button"
+            className={`cm-tab ${filter === "ALL" ? "is-active" : ""}`}
+            onClick={() => setFilter("ALL")}
+          >
+            ALL ({MINERS.length})
+          </button>
+          {TIER_ORDER.map((tier) => {
+            const count = MINERS.filter((m) => m.tier === tier).length;
+            return (
+              <button
+                key={tier}
+                type="button"
+                className={`cm-tab ${filter === tier ? "is-active" : ""}`}
+                onClick={() => setFilter(tier)}
+              >
+                {tier} ({count})
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="cm-grid">
+          {filtered.map((m) => (
+            <MinerCard key={m.id} miner={m} />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
