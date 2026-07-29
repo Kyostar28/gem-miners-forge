@@ -1,70 +1,68 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { MINERS, TIER_ORDER, type Tier } from "@/data/miners";
-import { MinerCard } from "@/components/MinerCard";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useGame } from "@/lib/game-store";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Dark Web Shop — CryptoMiner" },
-      { name: "description", content: "Purchase virtual mining hardware — 50 unique miners from USB sticks to legendary quantum rigs. Increase your hash rate." },
-      { property: "og:title", content: "Dark Web Shop — CryptoMiner" },
-      { property: "og:description", content: "50 unique virtual miners for sale. Basic to Mythic tier — every rig animated and ready to hash." },
+      { title: "Login — CryptoMiner Dark Web" },
+      { name: "description", content: "Entra a CryptoMiner con solo un username y empieza a minar CT Token y LTC con tus racks virtuales." },
+      { property: "og:title", content: "Login — CryptoMiner Dark Web" },
+      { property: "og:description", content: "Accede a tu sala de minado virtual: racks, ligas, juegos y rewards pool cada 10 minutos." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: Shop,
+  component: LoginPage,
 });
 
-type Filter = "ALL" | Tier;
+function LoginPage() {
+  const { login, state, ready } = useGame();
+  const navigate = useNavigate();
+  const [name, setName] = useState("");
 
-function Shop() {
-  const [filter, setFilter] = useState<Filter>("ALL");
-
-  const filtered = useMemo(
-    () => (filter === "ALL" ? MINERS : MINERS.filter((m) => m.tier === filter)),
-    [filter],
-  );
+  useEffect(() => {
+    if (ready && state) navigate({ to: "/dashboard" });
+  }, [ready, state, navigate]);
 
   return (
-    <div className="cm-shell">
-      <div className="cm-container">
-        <div className="cm-header">
-          <span aria-hidden>🛒</span>
-          <h1>DARK WEB SHOP<span className="cm-cursor">&nbsp;</span></h1>
+    <div className="cm-shell cm-login">
+      <form
+        className="cm-login__box"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!name.trim()) return;
+          login(name);
+          navigate({ to: "/dashboard" });
+        }}
+      >
+        <div className="cm-brand cm-brand--lg">
+          <span className="cm-brand__dot" aria-hidden />
+          CRYPTO<span>MINER</span>
         </div>
-        <p className="cm-sub">Purchase hardware to increase your hash rate. — 50 units in stock.</p>
+        <p className="cm-login__msg">
+          &gt; acceso restringido. identifícate para abrir tu sala de minado
+          <span className="cm-cursor">&nbsp;</span>
+        </p>
 
-        <nav className="cm-tabs" aria-label="Filter miners by tier">
-          <button
-            type="button"
-            className={`cm-tab ${filter === "ALL" ? "is-active" : ""}`}
-            onClick={() => setFilter("ALL")}
-          >
-            ALL ({MINERS.length})
-          </button>
-          {TIER_ORDER.map((tier) => {
-            const count = MINERS.filter((m) => m.tier === tier).length;
-            return (
-              <button
-                key={tier}
-                type="button"
-                className={`cm-tab ${filter === tier ? "is-active" : ""}`}
-                onClick={() => setFilter(tier)}
-              >
-                {tier} ({count})
-              </button>
-            );
-          })}
-        </nav>
+        <label className="cm-label" htmlFor="username">
+          USERNAME
+        </label>
+        <input
+          id="username"
+          className="cm-input"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="satoshi_01"
+          maxLength={20}
+          autoComplete="off"
+        />
 
-        <div className="cm-grid">
-          {filtered.map((m) => (
-            <MinerCard key={m.id} miner={m} />
-          ))}
-        </div>
-      </div>
+        <button type="submit" className="cm-btn cm-btn--full" disabled={!name.trim()}>
+          ENTRAR
+        </button>
+        <p className="cm-login__hint">Sin contraseña. Tu progreso se guarda en este dispositivo.</p>
+      </form>
     </div>
   );
 }

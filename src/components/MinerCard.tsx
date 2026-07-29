@@ -8,12 +8,24 @@ const tierClass: Record<Tier, string> = {
   MYTHIC:  "tier-mythic",
 };
 
-export function MinerCard({ miner }: { miner: Miner }) {
+export function MinerCard({
+  miner,
+  onBuy,
+  disabled,
+  label = "PURCHASE",
+  badge,
+}: {
+  miner: Miner;
+  onBuy?: () => void;
+  disabled?: boolean;
+  label?: string;
+  badge?: string;
+}) {
   return (
     <article className={`miner-card ${tierClass[miner.tier]}`}>
       <header className="miner-card__head">
         <span className={`miner-tier ${tierClass[miner.tier]}`}>{miner.tier}</span>
-        <span className="miner-unit">{miner.unit}</span>
+        <span className="miner-unit">{badge ?? miner.unit}</span>
       </header>
 
       <div className="miner-stage">
@@ -59,7 +71,9 @@ export function MinerCard({ miner }: { miner: Miner }) {
           </div>
         </div>
 
-        <button type="button" className="miner-buy">PURCHASE</button>
+        <button type="button" className="miner-buy" onClick={onBuy} disabled={disabled}>
+          {label}
+        </button>
       </div>
     </article>
   );
