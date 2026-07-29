@@ -15,6 +15,9 @@ import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AchievementsRouteImport } from './routes/achievements'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GamesIndexRouteImport } from './routes/games.index'
+import { Route as GamesSnakeRouteImport } from './routes/games.snake'
+import { Route as GamesMemoryRouteImport } from './routes/games.memory'
 
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
@@ -46,6 +49,21 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GamesIndexRoute = GamesIndexRouteImport.update({
+  id: '/games/',
+  path: '/games/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GamesSnakeRoute = GamesSnakeRouteImport.update({
+  id: '/games/snake',
+  path: '/games/snake',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GamesMemoryRoute = GamesMemoryRouteImport.update({
+  id: '/games/memory',
+  path: '/games/memory',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +72,9 @@ export interface FileRoutesByFullPath {
   '/leaderboard': typeof LeaderboardRoute
   '/marketplace': typeof MarketplaceRoute
   '/shop': typeof ShopRoute
+  '/games/memory': typeof GamesMemoryRoute
+  '/games/snake': typeof GamesSnakeRoute
+  '/games/': typeof GamesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +83,9 @@ export interface FileRoutesByTo {
   '/leaderboard': typeof LeaderboardRoute
   '/marketplace': typeof MarketplaceRoute
   '/shop': typeof ShopRoute
+  '/games/memory': typeof GamesMemoryRoute
+  '/games/snake': typeof GamesSnakeRoute
+  '/games': typeof GamesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +95,9 @@ export interface FileRoutesById {
   '/leaderboard': typeof LeaderboardRoute
   '/marketplace': typeof MarketplaceRoute
   '/shop': typeof ShopRoute
+  '/games/memory': typeof GamesMemoryRoute
+  '/games/snake': typeof GamesSnakeRoute
+  '/games/': typeof GamesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,6 +108,9 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/marketplace'
     | '/shop'
+    | '/games/memory'
+    | '/games/snake'
+    | '/games/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -89,6 +119,9 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/marketplace'
     | '/shop'
+    | '/games/memory'
+    | '/games/snake'
+    | '/games'
   id:
     | '__root__'
     | '/'
@@ -97,6 +130,9 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/marketplace'
     | '/shop'
+    | '/games/memory'
+    | '/games/snake'
+    | '/games/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,6 +142,9 @@ export interface RootRouteChildren {
   LeaderboardRoute: typeof LeaderboardRoute
   MarketplaceRoute: typeof MarketplaceRoute
   ShopRoute: typeof ShopRoute
+  GamesMemoryRoute: typeof GamesMemoryRoute
+  GamesSnakeRoute: typeof GamesSnakeRoute
+  GamesIndexRoute: typeof GamesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -152,6 +191,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/games/': {
+      id: '/games/'
+      path: '/games'
+      fullPath: '/games/'
+      preLoaderRoute: typeof GamesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/games/snake': {
+      id: '/games/snake'
+      path: '/games/snake'
+      fullPath: '/games/snake'
+      preLoaderRoute: typeof GamesSnakeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/games/memory': {
+      id: '/games/memory'
+      path: '/games/memory'
+      fullPath: '/games/memory'
+      preLoaderRoute: typeof GamesMemoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -162,6 +222,9 @@ const rootRouteChildren: RootRouteChildren = {
   LeaderboardRoute: LeaderboardRoute,
   MarketplaceRoute: MarketplaceRoute,
   ShopRoute: ShopRoute,
+  GamesMemoryRoute: GamesMemoryRoute,
+  GamesSnakeRoute: GamesSnakeRoute,
+  GamesIndexRoute: GamesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
