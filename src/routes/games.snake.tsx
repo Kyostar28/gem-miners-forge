@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useGame } from "@/lib/game-store";
@@ -6,10 +6,10 @@ import { useGame } from "@/lib/game-store";
 export const Route = createFileRoute("/games/snake")({
   head: () => ({
     meta: [
-      { title: "Hash Snake — Recoge bloques y gana CT | CryptoMiner" },
-      { name: "description", content: "Snake en versión minera: recoge bloques de hash sin chocar y gana 10 CT Token por bloque." },
+      { title: "Hash Snake — Recoge bloques y gana TH/s | CryptoMiner" },
+      { name: "description", content: "Snake en versión minera: recoge 15 bloques de hash con 3 vidas y gana +45 TH/s de poder de minado." },
       { property: "og:title", content: "Hash Snake — CryptoMiner" },
-      { property: "og:description", content: "Snake retro verde neón. Cada bloque minado son 10 CT." },
+      { property: "og:description", content: "Snake retro verde neón con 3 vidas. Completa el reto y suma poder." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -19,29 +19,35 @@ export const Route = createFileRoute("/games/snake")({
 
 const N = 18;
 const CELL = 18;
+const TARGET = 15;
+const REWARD = 45; // TH/s
 
 type P = { x: number; y: number };
 
 function SnakeGame() {
-  const { update, state } = useGame();
+  const { update, awardPower, state } = useGame();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const snake = useRef<P[]>([{ x: 8, y: 8 }]);
   const dir = useRef<P>({ x: 1, y: 0 });
   const nextDir = useRef<P>({ x: 1, y: 0 });
   const food = useRef<P>({ x: 12, y: 8 });
   const [score, setScore] = useState(0);
-  const [over, setOver] = useState(false);
-  const [running, setRunning] = useState(false);
+  const [lives, setLives] = useState(3);
+  const [status, setStatus] = useState<"idle" | "playing" | "over" | "won">("idle");
 
-  const reset = useCallback(() => {
+  const respawn = useCallback(() => {
     snake.current = [{ x: 8, y: 8 }];
     dir.current = { x: 1, y: 0 };
     nextDir.current = { x: 1, y: 0 };
     food.current = { x: 12, y: 8 };
-    setScore(0);
-    setOver(false);
-    setRunning(true);
   }, []);
+
+  const reset = useCallback(() => {
+    respawn();
+    setScore(0);
+    setLives(3);
+    setStatus("playing");
+  }, [respawn]);
 
   const turn = useCallback((x: number, y: number) => {
     if (dir.current.x === -x && dir.current.y === -y) return;
@@ -66,7 +72,7 @@ function SnakeGame() {
   }, [turn]);
 
   useEffect(() => {
-    if (!running) return;
+    if (status !== "playing") return;
     const id = setInterval(() => {
       dir.current = nextDir.current;
       const head = {
@@ -77,14 +83,21 @@ function SnakeGame() {
         head.x < 0 || head.y < 0 || head.x >= N || head.y >= N ||
         snake.current.some((s) => s.x === head.x && s.y === head.y);
       if (hit) {
-        setRunning(false);
-        setOver(true);
+        respawn();
+        setLives((l) => {
+          const left = l - 1;
+          if (left <= 0) setStatus("over");
+          return Math.max(0, left);
+        });
         return;
       }
       const body = [head, ...snake.current];
       if (head.x === food.current.x && head.y === food.current.y) {
-        setScore((s) => s + 1);
-        update((s) => ({ ct: s.ct + 10 }));
+        setScore((s) => {
+          const next = s + 1;
+          if (next >= TARGET) setStatus("won");
+          return next;
+        });
         let f: P;
         do {
           f = { x: Math.floor(Math.random() * N), y: Math.floor(Math.random() * N) };
@@ -115,36 +128,54 @@ function SnakeGame() {
       ctx.shadowBlur = 0;
     }, 130);
     return () => clearInterval(id);
-  }, [running, update]);
+  }, [status, respawn]);
 
   useEffect(() => {
-    if (!over) return;
+    if (status !== "over" && status !== "won") return;
     update((s) => ({ games: { ...s.games, snakeBest: Math.max(s.games.snakeBest, score) } }));
-  }, [over, score, update]);
+    if (status === "won") awardPower(REWARD);
+  }, [status, score, update, awardPower]);
 
   return (
-    <AppShell title="HASH SNAKE" subtitle="Recoge bloques de hash. Cada bloque = 10 CT. Flechas o WASD.">
+    <AppShell title="HASH SNAKE" subtitle={`Recoge ${TARGET} bloques de hash con 3 vidas. Flechas o WASD.`}>
       <div className="cm-gamebar">
-        <span className="cm-chip">SCORE {score}</span>
+        <span className="cm-chip">SCORE {score}/{TARGET}</span>
+        <span className="cm-chip cm-chip--lives">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <span key={i} className={i < lives ? "cm-life is-on" : "cm-life"}>♥</span>
+          ))}
+        </span>
         <span className="cm-chip">RÉCORD {state?.games.snakeBest ?? 0}</span>
+        <span className="cm-chip cm-chip--ct">PREMIO +{REWARD} TH/s</span>
         <button type="button" className="cm-btn" onClick={reset}>
-          {running ? "REINICIAR" : "JUGAR"}
+          {status === "playing" ? "REINICIAR" : "JUGAR"}
         </button>
+        <Link to="/games" className="cm-btn cm-btn--ghost">MENÚ</Link>
       </div>
 
-      {over ? <p className="cm-win cm-win--bad">GAME OVER — {score} bloques minados ({score * 10} CT).</p> : null}
-
-      <div className="cm-snakewrap">
-        <canvas ref={canvasRef} width={N * CELL} height={N * CELL} className="cm-canvas" />
-        <div className="cm-dpad">
-          <button type="button" onClick={() => turn(0, -1)} aria-label="Arriba">▲</button>
-          <div>
-            <button type="button" onClick={() => turn(-1, 0)} aria-label="Izquierda">◀</button>
-            <button type="button" onClick={() => turn(1, 0)} aria-label="Derecha">▶</button>
+      {status === "over" || status === "won" ? (
+        <div className={`cm-over cm-over--${status}`}>
+          <div className="cm-over__icon" aria-hidden>{status === "won" ? "🏆" : "💀"}</div>
+          <h3>{status === "won" ? "¡COMPLETADO!" : "GAME OVER"}</h3>
+          <p>{status === "won" ? `+${REWARD} TH/s añadidos a tu poder de minado.` : `Perdiste tus 3 vidas con ${score} bloques.`}</p>
+          <div className="cm-over__actions">
+            <button type="button" className="cm-btn" onClick={reset}>EMPEZAR DE NUEVO</button>
+            <Link to="/games" className="cm-btn cm-btn--ghost">VOLVER AL MENÚ</Link>
           </div>
-          <button type="button" onClick={() => turn(0, 1)} aria-label="Abajo">▼</button>
         </div>
-      </div>
+      ) : (
+        <div className="cm-snakewrap">
+          <canvas ref={canvasRef} width={N * CELL} height={N * CELL} className="cm-canvas" />
+          <div className="cm-dpad">
+            <button type="button" onClick={() => turn(0, -1)} aria-label="Arriba">▲</button>
+            <div>
+              <button type="button" onClick={() => turn(-1, 0)} aria-label="Izquierda">◀</button>
+              <button type="button" onClick={() => turn(1, 0)} aria-label="Derecha">▶</button>
+            </div>
+            <button type="button" onClick={() => turn(0, 1)} aria-label="Abajo">▼</button>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
