@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
@@ -20,6 +21,11 @@ import { Route as GamesSnakeRouteImport } from './routes/games.snake'
 import { Route as GamesMemoryRouteImport } from './routes/games.memory'
 import { Route as GamesSlugRouteImport } from './routes/games.$slug'
 
+const WalletRoute = WalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/leaderboard': typeof LeaderboardRoute
   '/marketplace': typeof MarketplaceRoute
   '/shop': typeof ShopRoute
+  '/wallet': typeof WalletRoute
   '/games/$slug': typeof GamesSlugRoute
   '/games/memory': typeof GamesMemoryRoute
   '/games/snake': typeof GamesSnakeRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/leaderboard': typeof LeaderboardRoute
   '/marketplace': typeof MarketplaceRoute
   '/shop': typeof ShopRoute
+  '/wallet': typeof WalletRoute
   '/games/$slug': typeof GamesSlugRoute
   '/games/memory': typeof GamesMemoryRoute
   '/games/snake': typeof GamesSnakeRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/leaderboard': typeof LeaderboardRoute
   '/marketplace': typeof MarketplaceRoute
   '/shop': typeof ShopRoute
+  '/wallet': typeof WalletRoute
   '/games/$slug': typeof GamesSlugRoute
   '/games/memory': typeof GamesMemoryRoute
   '/games/snake': typeof GamesSnakeRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/marketplace'
     | '/shop'
+    | '/wallet'
     | '/games/$slug'
     | '/games/memory'
     | '/games/snake'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/marketplace'
     | '/shop'
+    | '/wallet'
     | '/games/$slug'
     | '/games/memory'
     | '/games/snake'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/marketplace'
     | '/shop'
+    | '/wallet'
     | '/games/$slug'
     | '/games/memory'
     | '/games/snake'
@@ -154,6 +166,7 @@ export interface RootRouteChildren {
   LeaderboardRoute: typeof LeaderboardRoute
   MarketplaceRoute: typeof MarketplaceRoute
   ShopRoute: typeof ShopRoute
+  WalletRoute: typeof WalletRoute
   GamesSlugRoute: typeof GamesSlugRoute
   GamesMemoryRoute: typeof GamesMemoryRoute
   GamesSnakeRoute: typeof GamesSnakeRoute
@@ -162,6 +175,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wallet': {
+      id: '/wallet'
+      path: '/wallet'
+      fullPath: '/wallet'
+      preLoaderRoute: typeof WalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shop': {
       id: '/shop'
       path: '/shop'
@@ -242,6 +262,7 @@ const rootRouteChildren: RootRouteChildren = {
   LeaderboardRoute: LeaderboardRoute,
   MarketplaceRoute: MarketplaceRoute,
   ShopRoute: ShopRoute,
+  WalletRoute: WalletRoute,
   GamesSlugRoute: GamesSlugRoute,
   GamesMemoryRoute: GamesMemoryRoute,
   GamesSnakeRoute: GamesSnakeRoute,
