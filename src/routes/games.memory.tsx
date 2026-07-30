@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useGame } from "@/lib/game-store";
@@ -7,9 +7,9 @@ export const Route = createFileRoute("/games/memory")({
   head: () => ({
     meta: [
       { title: "Crypto Memory — Empareja 6 criptos | CryptoMiner" },
-      { name: "description", content: "Juego de memoria con 6 criptomonedas: BTC, ETH, LTC, DOGE, SOL y CT. Gana hasta 300 CT Token." },
+      { name: "description", content: "Juego de memoria con 6 criptomonedas: BTC, ETH, LTC, DOGE, SOL y CT. 3 vidas y +50 TH/s de poder al completarlo." },
       { property: "og:title", content: "Crypto Memory — CryptoMiner" },
-      { property: "og:description", content: "Empareja las 6 criptos en pocos intentos y gana CT." },
+      { property: "og:description", content: "Empareja las 6 criptos con 3 vidas y gana poder de minado." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -25,6 +25,9 @@ const COINS = [
   { sym: "SOL", icon: "◎", color: "#14f195" },
   { sym: "CT", icon: "⛏", color: "#22ff88" },
 ];
+
+const FREE_MISSES = 6;
+const REWARD = 50; // TH/s
 
 interface Card {
   id: number;
@@ -43,78 +46,101 @@ function shuffle(): Card[] {
 }
 
 function MemoryGame() {
-  const { update } = useGame();
+  const { update, awardPower } = useGame();
   const [deck, setDeck] = useState<Card[]>([]);
   const [flipped, setFlipped] = useState<number[]>([]);
   const [matched, setMatched] = useState<string[]>([]);
   const [moves, setMoves] = useState(0);
-  const [reward, setReward] = useState<number | null>(null);
+  const [misses, setMisses] = useState(0);
+  const [done, setDone] = useState<"won" | "over" | null>(null);
+
+  const lives = Math.max(0, 3 - Math.max(0, misses - FREE_MISSES));
 
   const reset = useCallback(() => {
     setDeck(shuffle());
     setFlipped([]);
     setMatched([]);
     setMoves(0);
-    setReward(null);
+    setMisses(0);
+    setDone(null);
   }, []);
 
   useEffect(() => reset(), [reset]);
 
   useEffect(() => {
-    if (flipped.length !== 2) return;
+    if (flipped.length !== 2 || done) return;
     const [a, b] = flipped.map((i) => deck[i]);
     setMoves((m) => m + 1);
     if (a.sym === b.sym) {
       setMatched((m) => [...m, a.sym]);
       setFlipped([]);
     } else {
+      setMisses((m) => m + 1);
       const t = setTimeout(() => setFlipped([]), 750);
       return () => clearTimeout(t);
     }
-  }, [flipped, deck]);
-
-  const won = matched.length === COINS.length && deck.length > 0;
+  }, [flipped, deck, done]);
 
   useEffect(() => {
-    if (!won || reward !== null) return;
-    const prize = Math.max(50, 300 - (moves - 6) * 20);
-    setReward(prize);
-    update((s) => ({ ct: s.ct + prize, games: { ...s.games, memoryWins: s.games.memoryWins + 1 } }));
-  }, [won, reward, moves, update]);
+    if (done) return;
+    if (lives <= 0) setDone("over");
+    else if (deck.length > 0 && matched.length === COINS.length) setDone("won");
+  }, [lives, matched.length, deck.length, done]);
+
+  useEffect(() => {
+    if (done !== "won") return;
+    awardPower(REWARD);
+    update((s) => ({ games: { ...s.games, memoryWins: s.games.memoryWins + 1 } }));
+  }, [done, awardPower, update]);
 
   return (
-    <AppShell title="CRYPTO MEMORY" subtitle="Empareja las 6 criptos. Menos intentos = más CT.">
+    <AppShell title="CRYPTO MEMORY" subtitle="Empareja las 6 criptos. Tras 6 fallos, cada error cuesta una vida.">
       <div className="cm-gamebar">
         <span className="cm-chip">INTENTOS {moves}</span>
         <span className="cm-chip">PARES {matched.length}/6</span>
-        <button type="button" className="cm-btn" onClick={reset}>
-          REINICIAR
-        </button>
+        <span className="cm-chip cm-chip--lives">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <span key={i} className={i < lives ? "cm-life is-on" : "cm-life"}>♥</span>
+          ))}
+        </span>
+        <span className="cm-chip cm-chip--ct">PREMIO +{REWARD} TH/s</span>
+        <button type="button" className="cm-btn" onClick={reset}>REINICIAR</button>
+        <Link to="/games" className="cm-btn cm-btn--ghost">MENÚ</Link>
       </div>
 
-      {won ? <p className="cm-win">¡GANASTE! +{reward} CT acreditados.</p> : null}
-
-      <div className="cm-memory">
-        {deck.map((c, i) => {
-          const open = flipped.includes(i) || matched.includes(c.sym);
-          return (
-            <button
-              key={c.id}
-              type="button"
-              className={`cm-mcard ${open ? "is-open" : ""}`}
-              style={open ? ({ "--coin": c.color } as React.CSSProperties) : undefined}
-              onClick={() => {
-                if (open || flipped.length === 2) return;
-                setFlipped((f) => [...f, i]);
-              }}
-              aria-label={open ? c.sym : "carta oculta"}
-            >
-              <span className="cm-mcard__face">{open ? c.icon : "?"}</span>
-              {open ? <span className="cm-mcard__sym">{c.sym}</span> : null}
-            </button>
-          );
-        })}
-      </div>
+      {done ? (
+        <div className={`cm-over cm-over--${done}`}>
+          <div className="cm-over__icon" aria-hidden>{done === "won" ? "🏆" : "💀"}</div>
+          <h3>{done === "won" ? "¡COMPLETADO!" : "GAME OVER"}</h3>
+          <p>{done === "won" ? `+${REWARD} TH/s añadidos a tu poder de minado.` : "Perdiste tus 3 vidas."}</p>
+          <div className="cm-over__actions">
+            <button type="button" className="cm-btn" onClick={reset}>EMPEZAR DE NUEVO</button>
+            <Link to="/games" className="cm-btn cm-btn--ghost">VOLVER AL MENÚ</Link>
+          </div>
+        </div>
+      ) : (
+        <div className="cm-memory">
+          {deck.map((c, i) => {
+            const open = flipped.includes(i) || matched.includes(c.sym);
+            return (
+              <button
+                key={c.id}
+                type="button"
+                className={`cm-mcard ${open ? "is-open" : ""}`}
+                style={open ? ({ "--coin": c.color } as React.CSSProperties) : undefined}
+                onClick={() => {
+                  if (open || flipped.length === 2) return;
+                  setFlipped((f) => [...f, i]);
+                }}
+                aria-label={open ? c.sym : "carta oculta"}
+              >
+                <span className="cm-mcard__face">{open ? c.icon : "?"}</span>
+                {open ? <span className="cm-mcard__sym">{c.sym}</span> : null}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </AppShell>
   );
 }

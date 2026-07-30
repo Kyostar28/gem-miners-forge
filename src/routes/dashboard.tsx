@@ -1,15 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useGame, fmt, CYCLE_MS, POOL_CT, POOL_LTC, NETWORK_POWER } from "@/lib/game-store";
+import { SplitModal } from "@/components/SplitModal";
+import { useGame, fmt, CYCLE_MS, NETWORK_POWER } from "@/lib/game-store";
+import { COINS, fmtCoin } from "@/lib/coins";
 import { getRank, rankRequirement, RANK_COUNT } from "@/lib/leagues";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — Tu sala de minado | CryptoMiner" },
-      { name: "description", content: "Consulta tus racks, poder de minado, liga actual, balances de CT y LTC y reparte tu poder entre monedas." },
+      { name: "description", content: "Consulta tus racks, poder de minado, liga actual, balances multi-cripto y reparte tu poder entre BTC, ETH, SOL, LTC y más." },
       { property: "og:title", content: "Dashboard — Tu sala de minado" },
-      { property: "og:description", content: "Racks activos, liga, progreso y rewards pool cada 10 minutos." },
+      { property: "og:description", content: "Racks activos, liga, progreso y rewards pool multi-cripto cada 10 minutos." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -23,20 +26,21 @@ function clock(ms: number) {
 }
 
 function DashboardPage() {
-  const { state, power, ownedMiners, update, claim, timeLeft, estimate } = useGame();
+  const { state, power, basePower, ownedMiners, claim, timeLeft, estimates, splitPct, balance } = useGame();
+  const [split, setSplit] = useState(false);
   if (!state) return <AppShell title="DASHBOARD">{null}</AppShell>;
 
   const rank = getRank(power);
   const share = (power / (NETWORK_POWER + power)) * 100;
   const ready = timeLeft <= 0;
+  const active = COINS.filter((c) => splitPct[c.key] > 0);
 
-  // build racks of 6 slots
   const units = ownedMiners.flatMap((o) => Array.from({ length: o.count }, () => o.miner));
   const racks: (typeof units)[] = [];
   for (let i = 0; i < units.length; i += 6) racks.push(units.slice(i, i + 6));
 
   return (
-    <AppShell title={`SALA DE MINADO`} subtitle={`Bienvenido de vuelta, @${state.username}. Tus máquinas nunca duermen.`}>
+    <AppShell title="SALA DE MINADO" subtitle={`Bienvenido de vuelta, @${state.username}. Tus máquinas nunca duermen.`}>
       <section className="cm-cols">
         {/* LEAGUE */}
         <div className={`cm-panel cm-league ${rank.league.cls}`}>
@@ -66,6 +70,9 @@ function DashboardPage() {
               </>
             )}
           </div>
+          <p className="cm-note">
+            Rigs {fmt(basePower)} TH/s + bonus de juegos {fmt(state.bonusPower)} TH/s
+          </p>
         </div>
 
         {/* REWARDS POOL */}
@@ -80,52 +87,40 @@ function DashboardPage() {
           <div className="cm-progress cm-progress--thin">
             <div className="cm-progress__fill" style={{ width: `${100 - (timeLeft / CYCLE_MS) * 100}%` }} />
           </div>
-          <p className="cm-note">
-            Pool global: {fmt(POOL_CT)} CT + {POOL_LTC} LTC · tu share {share.toFixed(3)}%
-          </p>
+          <p className="cm-note">Tu share de red: {share.toFixed(3)}% · 10 monedas minables</p>
 
-          <label className="cm-label" htmlFor="split">
-            SPLIT POWER — CT {state.splitCt}% / LTC {100 - state.splitCt}%
-          </label>
-          <input
-            id="split"
-            className="cm-range"
-            type="range"
-            min={0}
-            max={100}
-            step={5}
-            value={state.splitCt}
-            onChange={(e) => update({ splitCt: Number(e.target.value) })}
-          />
-          <div className="cm-split">
-            <div className="cm-split__bar">
-              <div className="cm-split__ct" style={{ width: `${state.splitCt}%` }}>CT</div>
-              <div className="cm-split__ltc" style={{ width: `${100 - state.splitCt}%` }}>LTC</div>
-            </div>
+          <button type="button" className="cm-btn cm-btn--ghost cm-btn--full" onClick={() => setSplit(true)}>
+            ⇄ AJUSTAR SPLIT POWER
+          </button>
+
+          <div className="cm-splitbar">
+            {active.map((c) => (
+              <span key={c.key} style={{ width: `${splitPct[c.key]}%`, background: c.color }} title={`${c.symbol} ${splitPct[c.key].toFixed(1)}%`} />
+            ))}
           </div>
 
-          <div className="cm-est">
-            <div className="cm-est__item">
-              <span className="cm-est__k">EST. CT / ciclo</span>
-              <span className="cm-est__v">{fmt(estimate.ct, 2)}</span>
-            </div>
-            <div className="cm-est__item cm-est__item--ltc">
-              <span className="cm-est__k">EST. LTC / ciclo</span>
-              <span className="cm-est__v">{fmt(estimate.ltc, 6)}</span>
-            </div>
+          <div className="cm-est cm-est--multi">
+            {active.map((c) => (
+              <div className="cm-est__item" key={c.key} style={{ ["--coin" as string]: c.color }}>
+                <span className="cm-est__k">{c.icon} {c.symbol} · {splitPct[c.key].toFixed(0)}%</span>
+                <span className="cm-est__v">{fmtCoin(c.key, estimates[c.key] ?? 0)}</span>
+              </div>
+            ))}
+            {active.length === 0 ? <p className="cm-note">No has asignado poder a ninguna moneda.</p> : null}
           </div>
         </div>
 
         {/* BALANCES */}
         <div className="cm-panel">
           <div className="cm-panel__title">BALANCES</div>
-          <div className="cm-balbig">
-            <span className="cm-balbig__k">CT TOKEN</span>
-            <span className="cm-balbig__v">{fmt(state.ct, 2)}</span>
-          </div>
-          <div className="cm-balbig cm-balbig--ltc">
-            <span className="cm-balbig__k">LITECOIN</span>
-            <span className="cm-balbig__v">{fmt(state.ltc, 6)}</span>
+          <div className="cm-walletgrid cm-walletgrid--compact">
+            {COINS.map((c) => (
+              <div className="cm-coinrow" key={c.key} style={{ ["--coin" as string]: c.color }}>
+                <span className="cm-coinrow__icon">{c.icon}</span>
+                <span className="cm-coinrow__sym">{c.symbol}</span>
+                <span className="cm-coinrow__val">{fmtCoin(c.key, balance(c.key))}</span>
+              </div>
+            ))}
           </div>
           <div className="cm-statgrid">
             <div><span>PODER</span><b>{fmt(power)} TH/s</b></div>
@@ -168,6 +163,8 @@ function DashboardPage() {
           ))}
         </div>
       )}
+
+      {split ? <SplitModal onClose={() => setSplit(false)} /> : null}
     </AppShell>
   );
 }
