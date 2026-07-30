@@ -648,13 +648,13 @@
 /* ============ USER CARD (sidebar) ============ */
 .cm-usercard {
   border: 1px solid var(--cm-border); border-radius: 10px; padding: .75rem;
-  background: linear-gradient(160deg, color-mix(in oklab, var(--lg, #22ff88) 14%, #060b08), #060b08);
-  box-shadow: inset 0 0 30px -18px var(--lg, #22ff88); display: grid; gap: .55rem;
+  background: linear-gradient(160deg, color-mix(in oklab, var(--lg-accent, #22ff88) 14%, #060b08), #060b08);
+  box-shadow: inset 0 0 30px -18px var(--lg-accent, #22ff88); display: grid; gap: .55rem;
 }
 .cm-usercard__top { display: flex; align-items: center; gap: .6rem; }
 .cm-usercard__avatar {
   position: relative; width: 38px; height: 38px; display: grid; place-items: center; flex: none;
-  border-radius: 8px; border: 1px solid var(--lg, #22ff88); color: var(--lg, #22ff88);
+  border-radius: 8px; border: 1px solid var(--lg-accent, #22ff88); color: var(--lg-accent, #22ff88);
   background: #060b08; font-size: .8rem; letter-spacing: .08em;
 }
 .cm-usercard__status { position: absolute; right: -3px; bottom: -3px; width: 9px; height: 9px; border-radius: 50%; background: #22ff88; box-shadow: 0 0 8px #22ff88; animation: cm-pulse 1.6s infinite; }
@@ -664,11 +664,11 @@
 .cm-usercard__league { display: flex; align-items: center; gap: .55rem; }
 .cm-usercard__crest {
   width: 34px; height: 38px; display: grid; place-items: center; flex: none; font-size: .72rem;
-  color: var(--lg, #22ff88); border: 1px solid var(--lg, #22ff88);
+  color: var(--lg-accent, #22ff88); border: 1px solid var(--lg-accent, #22ff88);
   clip-path: polygon(50% 0, 100% 22%, 100% 74%, 50% 100%, 0 74%, 0 22%);
-  background: color-mix(in oklab, var(--lg, #22ff88) 18%, #060b08);
+  background: color-mix(in oklab, var(--lg-accent, #22ff88) 18%, #060b08);
 }
-.cm-usercard__lname { font-size: .74rem; letter-spacing: .16em; color: var(--lg, #22ff88); }
+.cm-usercard__lname { font-size: .74rem; letter-spacing: .16em; color: var(--lg-accent, #22ff88); }
 .cm-usercard__lmeta { font-size: .56rem; opacity: .6; letter-spacing: .12em; }
 .cm-usercard__foot { display: flex; justify-content: space-between; font-size: .58rem; opacity: .75; letter-spacing: .1em; }
 
