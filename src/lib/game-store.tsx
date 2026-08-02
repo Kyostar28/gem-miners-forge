@@ -151,9 +151,15 @@ interface Ctx {
   update: (patch: Partial<SaveState> | ((s: SaveState) => Partial<SaveState>)) => void;
   power: number;
   basePower: number;
+  /** unmounted miners (inventory) */
   ownedMiners: { miner: Miner; count: number }[];
+  /** rigs with their model + mounted miners */
+  rigs: { rig: Rig; model: RackModel; miners: (Miner | null)[]; power: number }[];
   buy: (miner: Miner) => boolean;
   sell: (miner: Miner) => boolean;
+  buyRack: (model: RackModel) => boolean;
+  mount: (minerId: number, rigId: string, slot: number) => boolean;
+  unmount: (rigId: string, slot: number) => void;
   claim: () => void;
   timeLeft: number;
   /** legacy CT/LTC estimate */
@@ -166,7 +172,13 @@ interface Ctx {
   awardPower: (thps: number) => void;
   recordArcade: (slug: string, score: number, won: boolean) => void;
   withdraw: (coin: string, amount: number, address: string) => string | null;
+  cloudDeposit: (coin: string, amount: number, source: "balance" | "external") => string | null;
+  cloudMined: (dep: CloudDeposit, at?: number) => number;
+  cloudClaim: (id: string) => void;
+  cloudClose: (id: string) => void;
+  now: number;
 }
+
 
 const GameCtx = createContext<Ctx | null>(null);
 
