@@ -28,13 +28,37 @@ export interface Withdrawal {
   status: "PENDING" | "SENT";
 }
 
+export interface Rig {
+  id: string;
+  model: string; // RackModel key
+  slots: (number | null)[]; // miner ids
+}
+
+export interface CloudDeposit {
+  id: string;
+  coin: string;
+  amount: number;
+  start: number;
+  /** last claim timestamp — accrual base */
+  last: number;
+  source: "balance" | "external";
+}
+
+/** daily yield of a cloud mining contract */
+export const CLOUD_DAILY = 0.0003; // 0.03% / 24h
+export const DAY_MS = 86_400_000;
+
 export interface SaveState {
   username: string;
   ct: number;
   ltc: number;
   /** balances of the other minable coins */
   coins: Record<string, number>;
-  owned: number[]; // miner ids (repeatable)
+  owned: number[]; // miner ids owned (inventory + mounted)
+  /** racks owned by the user */
+  rigs: Rig[];
+  /** cloud mining contracts */
+  cloud: CloudDeposit[];
   /** split weights per coin key (relative, normalized on use) */
   splits: Record<string, number>;
   cycleStart: number;
@@ -47,6 +71,7 @@ export interface SaveState {
   achievements: string[];
   withdrawals: Withdrawal[];
 }
+
 
 const defaultSplits = (): Record<string, number> => {
   const s: Record<string, number> = {};
