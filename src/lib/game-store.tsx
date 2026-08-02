@@ -420,6 +420,76 @@ export function GameProvider({ children }: { children: ReactNode }) {
     [update],
   );
 
+  // ---------- CLOUD MINING ----------
+  const addBalance = (s: SaveState, coin: string, amount: number): Partial<SaveState> =>
+    coin === "CT"
+      ? { ct: s.ct + amount }
+      : coin === "LTC"
+        ? { ltc: s.ltc + amount }
+        : { coins: { ...s.coins, [coin]: (s.coins[coin] ?? 0) + amount } };
+
+  const cloudDeposit = useCallback(
+    (coin: string, amount: number, source: "balance" | "external"): string | null => {
+      const s = stateRef.current;
+      if (!s) return "Sesión no iniciada.";
+      if (!(amount > 0)) return "Cantidad inválida.";
+      const patch: Partial<SaveState> = {};
+      if (source === "balance") {
+        const bal = coin === "CT" ? s.ct : coin === "LTC" ? s.ltc : (s.coins[coin] ?? 0);
+        if (amount > bal) return "Saldo insuficiente en tu balance.";
+        if (coin === "CT") patch.ct = s.ct - amount;
+        else if (coin === "LTC") patch.ltc = s.ltc - amount;
+        else patch.coins = { ...s.coins, [coin]: (s.coins[coin] ?? 0) - amount };
+      }
+      const dep: CloudDeposit = {
+        id: Math.random().toString(16).slice(2, 10).toUpperCase(),
+        coin,
+        amount,
+        start: Date.now(),
+        last: Date.now(),
+        source,
+      };
+      update({ ...patch, cloud: [dep, ...s.cloud] });
+      return null;
+    },
+    [update],
+  );
+
+  const cloudMined = useCallback(
+    (dep: CloudDeposit, at: number = Date.now()) =>
+      Math.max(0, dep.amount * CLOUD_DAILY * ((at - dep.last) / DAY_MS)),
+    [],
+  );
+
+  const cloudClaim = useCallback(
+    (id: string) => {
+      const s = stateRef.current;
+      if (!s) return;
+      const dep = s.cloud.find((d) => d.id === id);
+      if (!dep) return;
+      const mined = cloudMined(dep);
+      if (mined <= 0) return;
+      update({
+        ...addBalance(s, dep.coin, mined),
+        cloud: s.cloud.map((d) => (d.id === id ? { ...d, last: Date.now() } : d)),
+      });
+    },
+    [update, cloudMined],
+  );
+
+  /** close a contract: mined + principal go back to the balance */
+  const cloudClose = useCallback(
+    (id: string) => {
+      const s = stateRef.current;
+      if (!s) return;
+      const dep = s.cloud.find((d) => d.id === id);
+      if (!dep) return;
+      const total = cloudMined(dep) + dep.amount;
+      update({ ...addBalance(s, dep.coin, total), cloud: s.cloud.filter((d) => d.id !== id) });
+    },
+    [update, cloudMined],
+  );
+
   const value: Ctx = {
     ready,
     state,
@@ -429,8 +499,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     power,
     basePower,
     ownedMiners,
+    rigs,
     buy,
     sell,
+    buyRack,
+    mount,
+    unmount,
     claim,
     timeLeft,
     estimate,
@@ -441,7 +515,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
     awardPower,
     recordArcade,
     withdraw,
+    cloudDeposit,
+    cloudMined,
+    cloudClaim,
+    cloudClose,
+    now,
   };
+
 
   return <GameCtx.Provider value={value}>{children}</GameCtx.Provider>;
 }
