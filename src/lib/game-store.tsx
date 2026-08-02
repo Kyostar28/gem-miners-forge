@@ -312,8 +312,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     (miner: Miner) => {
       const s = stateRef.current;
       if (!s) return false;
+      // only unmounted units can be sold
+      const mounted = s.rigs.flatMap((r) => r.slots).filter((id) => id === miner.id).length;
+      const total = s.owned.filter((id) => id === miner.id).length;
+      if (total - mounted <= 0) return false;
       const i = s.owned.indexOf(miner.id);
-      if (i === -1) return false;
       const owned = [...s.owned];
       owned.splice(i, 1);
       update({ ct: s.ct + Math.round(miner.price * 0.7), owned });
@@ -321,6 +324,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     },
     [update],
   );
+
 
   const share = power / (NETWORK_POWER + power);
 
