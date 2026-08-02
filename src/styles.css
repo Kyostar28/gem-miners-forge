@@ -909,3 +909,6 @@
 .cm-live { color: #00ff88; text-shadow: 0 0 8px rgba(0, 255, 136, 0.6); font-variant-numeric: tabular-nums; }
 .cm-cloudcard__actions { display: flex; gap: 8px; }
 .cm-cloudcard__actions .cm-btn { flex: 1; }
+.cm-cols--compact { align-items: start; }
+.cm-cols--compact .cm-walletgrid--compact { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+.cm-cols--compact .cm-coinrow { padding: 4px 6px; font-size: 10px; }
