@@ -152,8 +152,9 @@ function CloudPage() {
                   <button type="button" className="cm-btn cm-btn--ghost" onClick={() => cloudClose(d.id)}>CERRAR</button>
                 </div>
                 <p className="cm-note cm-note--xs">
-                  Origen: {d.source === "balance" ? "balance interno" : "wallet externa"} · {fmt(CLOUD_DAILY * 100 * 100) / 100}0.03% diario
+                  Origen: {d.source === "balance" ? "balance interno" : "wallet externa"} · 0.03% diario
                 </p>
+
               </article>
             );
           })}
