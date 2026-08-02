@@ -10,6 +10,8 @@ import {
 } from "react";
 import { MINERS, type Miner } from "@/data/miners";
 import { COINS } from "@/lib/coins";
+import { RACK_MAP, type RackModel } from "@/data/racks";
+
 
 const KEY = "cryptominer:save:v1";
 export const CYCLE_MS = 10 * 60 * 1000; // rewards pool every 10 minutes
