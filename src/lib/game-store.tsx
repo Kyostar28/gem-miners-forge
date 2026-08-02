@@ -85,12 +85,20 @@ const emptyCoins = (): Record<string, number> => {
   return s;
 };
 
+const newRig = (model: string): Rig => ({
+  id: Math.random().toString(16).slice(2, 10),
+  model,
+  slots: Array.from({ length: RACK_MAP[model]?.slots ?? 3 }, () => null),
+});
+
 const initial = (username: string): SaveState => ({
   username,
   ct: 500,
   ltc: 0,
   coins: emptyCoins(),
   owned: [1],
+  rigs: [{ ...newRig("shelf"), slots: [1, null, null] }],
+  cloud: [],
   splits: defaultSplits(),
   cycleStart: Date.now(),
   claimed: 0,
@@ -105,19 +113,33 @@ const initial = (username: string): SaveState => ({
 function migrate(raw: Partial<SaveState> & { splitCt?: number }): SaveState {
   const base = initial(raw.username ?? "miner");
   const splits = { ...base.splits, ...(raw.splits ?? {}) };
+  if (!raw.splitCt === undefined) { /* noop */ }
   if (!raw.splits && typeof raw.splitCt === "number") {
     splits.CT = raw.splitCt;
     splits.LTC = 100 - raw.splitCt;
   }
+  // older saves had no rigs: auto-mount every owned miner into shelves
+  let rigs = raw.rigs;
+  if (!rigs) {
+    const owned = raw.owned ?? [];
+    rigs = [];
+    for (let i = 0; i < Math.max(1, Math.ceil(owned.length / 3)); i++) {
+      const chunk = owned.slice(i * 3, i * 3 + 3);
+      rigs.push({ ...newRig("shelf"), slots: [chunk[0] ?? null, chunk[1] ?? null, chunk[2] ?? null] });
+    }
+  }
   return {
     ...base,
     ...raw,
+    rigs,
+    cloud: raw.cloud ?? [],
     coins: { ...base.coins, ...(raw.coins ?? {}) },
     splits,
     games: { ...base.games, ...(raw.games ?? {}) },
     arcade: raw.arcade ?? {},
     bonusPower: raw.bonusPower ?? 0,
     achievements: raw.achievements ?? [],
+
     withdrawals: raw.withdrawals ?? [],
   };
 }
