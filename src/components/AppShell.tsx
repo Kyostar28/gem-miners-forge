@@ -9,7 +9,9 @@ const NAV = [
   { to: "/games", label: "GAMES", icon: "◉" },
   { to: "/shop", label: "SHOP", icon: "🛒" },
   { to: "/marketplace", label: "MARKETPLACE", icon: "⇄" },
+  { to: "/cloud", label: "CLOUD MINING", icon: "☁" },
   { to: "/wallet", label: "WALLET", icon: "◈" },
+
   { to: "/leaderboard", label: "LEADERBOARD", icon: "★" },
   { to: "/achievements", label: "LOGROS", icon: "🏆" },
 ] as const;

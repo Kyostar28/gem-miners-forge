@@ -10,6 +10,8 @@ import {
 } from "react";
 import { MINERS, type Miner } from "@/data/miners";
 import { COINS } from "@/lib/coins";
+import { RACK_MAP, type RackModel } from "@/data/racks";
+
 
 const KEY = "cryptominer:save:v1";
 export const CYCLE_MS = 10 * 60 * 1000; // rewards pool every 10 minutes
@@ -26,13 +28,37 @@ export interface Withdrawal {
   status: "PENDING" | "SENT";
 }
 
+export interface Rig {
+  id: string;
+  model: string; // RackModel key
+  slots: (number | null)[]; // miner ids
+}
+
+export interface CloudDeposit {
+  id: string;
+  coin: string;
+  amount: number;
+  start: number;
+  /** last claim timestamp — accrual base */
+  last: number;
+  source: "balance" | "external";
+}
+
+/** daily yield of a cloud mining contract */
+export const CLOUD_DAILY = 0.0003; // 0.03% / 24h
+export const DAY_MS = 86_400_000;
+
 export interface SaveState {
   username: string;
   ct: number;
   ltc: number;
   /** balances of the other minable coins */
   coins: Record<string, number>;
-  owned: number[]; // miner ids (repeatable)
+  owned: number[]; // miner ids owned (inventory + mounted)
+  /** racks owned by the user */
+  rigs: Rig[];
+  /** cloud mining contracts */
+  cloud: CloudDeposit[];
   /** split weights per coin key (relative, normalized on use) */
   splits: Record<string, number>;
   cycleStart: number;
@@ -46,6 +72,7 @@ export interface SaveState {
   withdrawals: Withdrawal[];
 }
 
+
 const defaultSplits = (): Record<string, number> => {
   const s: Record<string, number> = {};
   for (const c of COINS) s[c.key] = c.key === "CT" ? 60 : c.key === "LTC" ? 40 : 0;
@@ -58,12 +85,20 @@ const emptyCoins = (): Record<string, number> => {
   return s;
 };
 
+const newRig = (model: string): Rig => ({
+  id: Math.random().toString(16).slice(2, 10),
+  model,
+  slots: Array.from({ length: RACK_MAP[model]?.slots ?? 3 }, () => null),
+});
+
 const initial = (username: string): SaveState => ({
   username,
   ct: 500,
   ltc: 0,
   coins: emptyCoins(),
   owned: [1],
+  rigs: [{ ...newRig("shelf"), slots: [1, null, null] }],
+  cloud: [],
   splits: defaultSplits(),
   cycleStart: Date.now(),
   claimed: 0,
@@ -82,15 +117,28 @@ function migrate(raw: Partial<SaveState> & { splitCt?: number }): SaveState {
     splits.CT = raw.splitCt;
     splits.LTC = 100 - raw.splitCt;
   }
+  // older saves had no rigs: auto-mount every owned miner into shelves
+  let rigs = raw.rigs;
+  if (!rigs) {
+    const owned = raw.owned ?? [];
+    rigs = [];
+    for (let i = 0; i < Math.max(1, Math.ceil(owned.length / 3)); i++) {
+      const chunk = owned.slice(i * 3, i * 3 + 3);
+      rigs.push({ ...newRig("shelf"), slots: [chunk[0] ?? null, chunk[1] ?? null, chunk[2] ?? null] });
+    }
+  }
   return {
     ...base,
     ...raw,
+    rigs,
+    cloud: raw.cloud ?? [],
     coins: { ...base.coins, ...(raw.coins ?? {}) },
     splits,
     games: { ...base.games, ...(raw.games ?? {}) },
     arcade: raw.arcade ?? {},
     bonusPower: raw.bonusPower ?? 0,
     achievements: raw.achievements ?? [],
+
     withdrawals: raw.withdrawals ?? [],
   };
 }
@@ -103,9 +151,15 @@ interface Ctx {
   update: (patch: Partial<SaveState> | ((s: SaveState) => Partial<SaveState>)) => void;
   power: number;
   basePower: number;
+  /** unmounted miners (inventory) */
   ownedMiners: { miner: Miner; count: number }[];
+  /** rigs with their model + mounted miners */
+  rigs: { rig: Rig; model: RackModel; miners: (Miner | null)[]; power: number }[];
   buy: (miner: Miner) => boolean;
   sell: (miner: Miner) => boolean;
+  buyRack: (model: RackModel) => boolean;
+  mount: (minerId: number, rigId: string, slot: number) => boolean;
+  unmount: (rigId: string, slot: number) => void;
   claim: () => void;
   timeLeft: number;
   /** legacy CT/LTC estimate */
@@ -118,7 +172,13 @@ interface Ctx {
   awardPower: (thps: number) => void;
   recordArcade: (slug: string, score: number, won: boolean) => void;
   withdraw: (coin: string, amount: number, address: string) => string | null;
+  cloudDeposit: (coin: string, amount: number, source: "balance" | "external") => string | null;
+  cloudMined: (dep: CloudDeposit, at?: number) => number;
+  cloudClaim: (id: string) => void;
+  cloudClose: (id: string) => void;
+  now: number;
 }
+
 
 const GameCtx = createContext<Ctx | null>(null);
 
@@ -161,21 +221,82 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const login = useCallback((username: string) => setState(initial(username.trim())), []);
   const logout = useCallback(() => setState(null), []);
 
+  /** miner ids currently mounted in rigs (multiset) */
+  const mountedIds = useMemo(() => {
+    const list: number[] = [];
+    for (const r of state?.rigs ?? []) for (const id of r.slots) if (id != null) list.push(id);
+    return list;
+  }, [state?.rigs]);
+
+  /** inventory = owned minus mounted */
   const ownedMiners = useMemo(() => {
     if (!state) return [];
     const counts = new Map<number, number>();
     for (const id of state.owned) counts.set(id, (counts.get(id) ?? 0) + 1);
+    for (const id of mountedIds) counts.set(id, (counts.get(id) ?? 0) - 1);
     return [...counts.entries()]
+      .filter(([, count]) => count > 0)
       .map(([id, count]) => ({ miner: MINERS.find((m) => m.id === id)!, count }))
       .filter((x) => x.miner)
       .sort((a, b) => b.miner.hashRate - a.miner.hashRate);
-  }, [state]);
+  }, [state, mountedIds]);
 
-  const basePower = useMemo(
-    () => ownedMiners.reduce((sum, o) => sum + o.miner.hashRate * o.count, 0),
-    [ownedMiners],
-  );
+  const rigs = useMemo(() => {
+    return (state?.rigs ?? []).map((rig) => {
+      const model = RACK_MAP[rig.model] ?? RACK_MAP.shelf;
+      const miners = rig.slots.map((id) => (id == null ? null : (MINERS.find((m) => m.id === id) ?? null)));
+      const rigPower = miners.reduce((s, m) => s + (m ? m.hashRate * model.boost : 0), 0);
+      return { rig, model, miners, power: rigPower };
+    });
+  }, [state?.rigs]);
+
+  /** only mounted miners produce hash power */
+  const basePower = useMemo(() => rigs.reduce((sum, r) => sum + r.power, 0), [rigs]);
   const power = basePower + (state?.bonusPower ?? 0);
+
+  const buyRack = useCallback(
+    (model: RackModel) => {
+      const s = stateRef.current;
+      if (!s || s.ct < model.price) return false;
+      update({ ct: s.ct - model.price, rigs: [...s.rigs, newRig(model.key)] });
+      return true;
+    },
+    [update],
+  );
+
+  const mount = useCallback(
+    (minerId: number, rigId: string, slot: number) => {
+      const s = stateRef.current;
+      if (!s) return false;
+      const rigsNext = s.rigs.map((r) => {
+        if (r.id !== rigId) return r;
+        const slots = [...r.slots];
+        if (slots[slot] != null) return r;
+        slots[slot] = minerId;
+        return { ...r, slots };
+      });
+      update({ rigs: rigsNext });
+      return true;
+    },
+    [update],
+  );
+
+  const unmount = useCallback(
+    (rigId: string, slot: number) => {
+      const s = stateRef.current;
+      if (!s) return;
+      update({
+        rigs: s.rigs.map((r) => {
+          if (r.id !== rigId) return r;
+          const slots = [...r.slots];
+          slots[slot] = null;
+          return { ...r, slots };
+        }),
+      });
+    },
+    [update],
+  );
+
 
   const buy = useCallback(
     (miner: Miner) => {
@@ -191,8 +312,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     (miner: Miner) => {
       const s = stateRef.current;
       if (!s) return false;
+      // only unmounted units can be sold
+      const mounted = s.rigs.flatMap((r) => r.slots).filter((id) => id === miner.id).length;
+      const total = s.owned.filter((id) => id === miner.id).length;
+      if (total - mounted <= 0) return false;
       const i = s.owned.indexOf(miner.id);
-      if (i === -1) return false;
       const owned = [...s.owned];
       owned.splice(i, 1);
       update({ ct: s.ct + Math.round(miner.price * 0.7), owned });
@@ -200,6 +324,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     },
     [update],
   );
+
 
   const share = power / (NETWORK_POWER + power);
 
@@ -295,6 +420,76 @@ export function GameProvider({ children }: { children: ReactNode }) {
     [update],
   );
 
+  // ---------- CLOUD MINING ----------
+  const addBalance = (s: SaveState, coin: string, amount: number): Partial<SaveState> =>
+    coin === "CT"
+      ? { ct: s.ct + amount }
+      : coin === "LTC"
+        ? { ltc: s.ltc + amount }
+        : { coins: { ...s.coins, [coin]: (s.coins[coin] ?? 0) + amount } };
+
+  const cloudDeposit = useCallback(
+    (coin: string, amount: number, source: "balance" | "external"): string | null => {
+      const s = stateRef.current;
+      if (!s) return "Sesión no iniciada.";
+      if (!(amount > 0)) return "Cantidad inválida.";
+      const patch: Partial<SaveState> = {};
+      if (source === "balance") {
+        const bal = coin === "CT" ? s.ct : coin === "LTC" ? s.ltc : (s.coins[coin] ?? 0);
+        if (amount > bal) return "Saldo insuficiente en tu balance.";
+        if (coin === "CT") patch.ct = s.ct - amount;
+        else if (coin === "LTC") patch.ltc = s.ltc - amount;
+        else patch.coins = { ...s.coins, [coin]: (s.coins[coin] ?? 0) - amount };
+      }
+      const dep: CloudDeposit = {
+        id: Math.random().toString(16).slice(2, 10).toUpperCase(),
+        coin,
+        amount,
+        start: Date.now(),
+        last: Date.now(),
+        source,
+      };
+      update({ ...patch, cloud: [dep, ...s.cloud] });
+      return null;
+    },
+    [update],
+  );
+
+  const cloudMined = useCallback(
+    (dep: CloudDeposit, at: number = Date.now()) =>
+      Math.max(0, dep.amount * CLOUD_DAILY * ((at - dep.last) / DAY_MS)),
+    [],
+  );
+
+  const cloudClaim = useCallback(
+    (id: string) => {
+      const s = stateRef.current;
+      if (!s) return;
+      const dep = s.cloud.find((d) => d.id === id);
+      if (!dep) return;
+      const mined = cloudMined(dep);
+      if (mined <= 0) return;
+      update({
+        ...addBalance(s, dep.coin, mined),
+        cloud: s.cloud.map((d) => (d.id === id ? { ...d, last: Date.now() } : d)),
+      });
+    },
+    [update, cloudMined],
+  );
+
+  /** close a contract: mined + principal go back to the balance */
+  const cloudClose = useCallback(
+    (id: string) => {
+      const s = stateRef.current;
+      if (!s) return;
+      const dep = s.cloud.find((d) => d.id === id);
+      if (!dep) return;
+      const total = cloudMined(dep) + dep.amount;
+      update({ ...addBalance(s, dep.coin, total), cloud: s.cloud.filter((d) => d.id !== id) });
+    },
+    [update, cloudMined],
+  );
+
   const value: Ctx = {
     ready,
     state,
@@ -304,8 +499,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     power,
     basePower,
     ownedMiners,
+    rigs,
     buy,
     sell,
+    buyRack,
+    mount,
+    unmount,
     claim,
     timeLeft,
     estimate,
@@ -316,7 +515,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
     awardPower,
     recordArcade,
     withdraw,
+    cloudDeposit,
+    cloudMined,
+    cloudClaim,
+    cloudClose,
+    now,
   };
+
 
   return <GameCtx.Provider value={value}>{children}</GameCtx.Provider>;
 }
