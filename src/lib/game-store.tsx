@@ -113,7 +113,6 @@ const initial = (username: string): SaveState => ({
 function migrate(raw: Partial<SaveState> & { splitCt?: number }): SaveState {
   const base = initial(raw.username ?? "miner");
   const splits = { ...base.splits, ...(raw.splits ?? {}) };
-  if (!raw.splitCt === undefined) { /* noop */ }
   if (!raw.splits && typeof raw.splitCt === "number") {
     splits.CT = raw.splitCt;
     splits.LTC = 100 - raw.splitCt;
