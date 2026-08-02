@@ -75,7 +75,7 @@ function CloudPage() {
       <section className="cm-cols cm-cols--compact">
         <div className="cm-panel cm-panel--sm">
           <div className="cm-panel__title">NUEVO CONTRATO</div>
-          <label className="cm-field">
+          <label className="cm-formfield">
             <span>MONEDA</span>
             <select className="cm-input" value={coin} onChange={(e) => setCoin(e.target.value)}>
               {COINS.map((c) => (
@@ -89,7 +89,7 @@ function CloudPage() {
             <button type="button" className={`cm-tab ${source === "external" ? "is-active" : ""}`} onClick={() => setSource("external")}>DEPÓSITO EXTERNO</button>
           </div>
 
-          <label className="cm-field">
+          <label className="cm-formfield">
             <span>CANTIDAD ({coin})</span>
             <input className="cm-input" inputMode="decimal" value={amount} placeholder="0.00" onChange={(e) => setAmount(e.target.value)} />
           </label>

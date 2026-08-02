@@ -875,7 +875,7 @@
 .cm-rackcard .cm-btn { grid-column: 1 / -1; width: 100%; }
 
 /* cloud mining */
-.cm-field { display: flex; flex-direction: column; gap: 4px; font-size: 10px; letter-spacing: 0.08em; }
+.cm-formfield { display: flex; flex-direction: column; gap: 4px; font-size: 10px; letter-spacing: 0.08em; height: auto; border: 0; background: none; width: 100%; }
 .cm-tabs--mini .cm-tab { font-size: 10px; padding: 4px 8px; }
 .cm-depositbox {
   border: 1px dashed rgba(0, 255, 136, 0.45);
