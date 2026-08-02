@@ -221,21 +221,82 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const login = useCallback((username: string) => setState(initial(username.trim())), []);
   const logout = useCallback(() => setState(null), []);
 
+  /** miner ids currently mounted in rigs (multiset) */
+  const mountedIds = useMemo(() => {
+    const list: number[] = [];
+    for (const r of state?.rigs ?? []) for (const id of r.slots) if (id != null) list.push(id);
+    return list;
+  }, [state?.rigs]);
+
+  /** inventory = owned minus mounted */
   const ownedMiners = useMemo(() => {
     if (!state) return [];
     const counts = new Map<number, number>();
     for (const id of state.owned) counts.set(id, (counts.get(id) ?? 0) + 1);
+    for (const id of mountedIds) counts.set(id, (counts.get(id) ?? 0) - 1);
     return [...counts.entries()]
+      .filter(([, count]) => count > 0)
       .map(([id, count]) => ({ miner: MINERS.find((m) => m.id === id)!, count }))
       .filter((x) => x.miner)
       .sort((a, b) => b.miner.hashRate - a.miner.hashRate);
-  }, [state]);
+  }, [state, mountedIds]);
 
-  const basePower = useMemo(
-    () => ownedMiners.reduce((sum, o) => sum + o.miner.hashRate * o.count, 0),
-    [ownedMiners],
-  );
+  const rigs = useMemo(() => {
+    return (state?.rigs ?? []).map((rig) => {
+      const model = RACK_MAP[rig.model] ?? RACK_MAP.shelf;
+      const miners = rig.slots.map((id) => (id == null ? null : (MINERS.find((m) => m.id === id) ?? null)));
+      const rigPower = miners.reduce((s, m) => s + (m ? m.hashRate * model.boost : 0), 0);
+      return { rig, model, miners, power: rigPower };
+    });
+  }, [state?.rigs]);
+
+  /** only mounted miners produce hash power */
+  const basePower = useMemo(() => rigs.reduce((sum, r) => sum + r.power, 0), [rigs]);
   const power = basePower + (state?.bonusPower ?? 0);
+
+  const buyRack = useCallback(
+    (model: RackModel) => {
+      const s = stateRef.current;
+      if (!s || s.ct < model.price) return false;
+      update({ ct: s.ct - model.price, rigs: [...s.rigs, newRig(model.key)] });
+      return true;
+    },
+    [update],
+  );
+
+  const mount = useCallback(
+    (minerId: number, rigId: string, slot: number) => {
+      const s = stateRef.current;
+      if (!s) return false;
+      const rigsNext = s.rigs.map((r) => {
+        if (r.id !== rigId) return r;
+        const slots = [...r.slots];
+        if (slots[slot] != null) return r;
+        slots[slot] = minerId;
+        return { ...r, slots };
+      });
+      update({ rigs: rigsNext });
+      return true;
+    },
+    [update],
+  );
+
+  const unmount = useCallback(
+    (rigId: string, slot: number) => {
+      const s = stateRef.current;
+      if (!s) return;
+      update({
+        rigs: s.rigs.map((r) => {
+          if (r.id !== rigId) return r;
+          const slots = [...r.slots];
+          slots[slot] = null;
+          return { ...r, slots };
+        }),
+      });
+    },
+    [update],
+  );
+
 
   const buy = useCallback(
     (miner: Miner) => {
