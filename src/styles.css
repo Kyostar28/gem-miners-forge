@@ -157,8 +157,39 @@
   --cm-green-deep:#063a1f;
   --cm-text:      #b8f5cf;
   --cm-mute:      #4a7a5c;
-  --cm-mono:      "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --cm-mono:      "Orbitron", ui-sans-serif, system-ui, sans-serif;
 }
+
+/* ============ THEMES ============ */
+html[data-theme="yellow"] {
+  --cm-bg: #0d0b04; --cm-panel: #171204; --cm-panel-2: #1e1808; --cm-border: #38300f;
+  --cm-green: #ffd400; --cm-green-dim: #b08c00; --cm-green-deep: #3a2f00;
+  --cm-text: #f6e8b0; --cm-mute: #8a7530;
+}
+html[data-theme="blue"] {
+  --cm-bg: #040a14; --cm-panel: #081222; --cm-panel-2: #0c1a2e; --cm-border: #163050;
+  --cm-green: #38b6ff; --cm-green-dim: #1273b0; --cm-green-deep: #062741;
+  --cm-text: #cfe8ff; --cm-mute: #4d7ba3;
+}
+html[data-theme="white"] {
+  --cm-bg: #eef1f0; --cm-panel: #ffffff; --cm-panel-2: #f5f7f6; --cm-border: #d3dbd7;
+  --cm-green: #0b8f4d; --cm-green-dim: #0b6a3b; --cm-green-deep: #cdeedd;
+  --cm-text: #16241d; --cm-mute: #5f7a6c;
+}
+html[data-theme="white"] .cm-usercard,
+html[data-theme="white"] .cm-coinrow,
+html[data-theme="white"] .cm-invcard,
+html[data-theme="white"] .cm-input,
+html[data-theme="white"] .cm-modal__box,
+html[data-theme="white"] .cm-slot,
+html[data-theme="white"] .cm-pref__pop,
+html[data-theme="white"] .cm-invbox {
+  background: var(--cm-panel);
+  color: var(--cm-text);
+}
+html[data-theme="white"] .cm-modal__backdrop { background: rgba(20,30,25,.45); }
+html[data-theme="white"] .cm-btn { color: #ffffff; }
+
 
 /* --- tier color variants --- */
 .tier-basic   { --cm-accent: #22ff88; --cm-accent-2: #0aa055; }
