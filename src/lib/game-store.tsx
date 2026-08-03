@@ -50,6 +50,8 @@ export const DAY_MS = 86_400_000;
 
 export interface SaveState {
   username: string;
+  /** avatar key from src/data/avatars.ts */
+  avatar: string;
   ct: number;
   ltc: number;
   /** balances of the other minable coins */
@@ -57,6 +59,10 @@ export interface SaveState {
   owned: number[]; // miner ids owned (inventory + mounted)
   /** racks owned by the user */
   rigs: Rig[];
+  /** spare parts owned: key -> count */
+  parts: Record<string, number>;
+  /** boosters owned: key -> count */
+  boosters: Record<string, number>;
   /** cloud mining contracts */
   cloud: CloudDeposit[];
   /** split weights per coin key (relative, normalized on use) */
@@ -71,6 +77,7 @@ export interface SaveState {
   achievements: string[];
   withdrawals: Withdrawal[];
 }
+
 
 
 const defaultSplits = (): Record<string, number> => {
