@@ -11,9 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as ShopRouteImport } from './routes/shop'
+import { Route as RuletaRouteImport } from './routes/ruleta'
 import { Route as PtcRouteImport } from './routes/ptc'
 import { Route as OfferwallRouteImport } from './routes/offerwall'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
+import { Route as LoteriaRouteImport } from './routes/loteria'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CloudRouteImport } from './routes/cloud'
@@ -34,6 +36,11 @@ const ShopRoute = ShopRouteImport.update({
   path: '/shop',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RuletaRoute = RuletaRouteImport.update({
+  id: '/ruleta',
+  path: '/ruleta',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PtcRoute = PtcRouteImport.update({
   id: '/ptc',
   path: '/ptc',
@@ -47,6 +54,11 @@ const OfferwallRoute = OfferwallRouteImport.update({
 const MarketplaceRoute = MarketplaceRouteImport.update({
   id: '/marketplace',
   path: '/marketplace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoteriaRoute = LoteriaRouteImport.update({
+  id: '/loteria',
+  path: '/loteria',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LeaderboardRoute = LeaderboardRouteImport.update({
@@ -101,9 +113,11 @@ export interface FileRoutesByFullPath {
   '/cloud': typeof CloudRoute
   '/dashboard': typeof DashboardRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/loteria': typeof LoteriaRoute
   '/marketplace': typeof MarketplaceRoute
   '/offerwall': typeof OfferwallRoute
   '/ptc': typeof PtcRoute
+  '/ruleta': typeof RuletaRoute
   '/shop': typeof ShopRoute
   '/wallet': typeof WalletRoute
   '/games/$slug': typeof GamesSlugRoute
@@ -117,9 +131,11 @@ export interface FileRoutesByTo {
   '/cloud': typeof CloudRoute
   '/dashboard': typeof DashboardRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/loteria': typeof LoteriaRoute
   '/marketplace': typeof MarketplaceRoute
   '/offerwall': typeof OfferwallRoute
   '/ptc': typeof PtcRoute
+  '/ruleta': typeof RuletaRoute
   '/shop': typeof ShopRoute
   '/wallet': typeof WalletRoute
   '/games/$slug': typeof GamesSlugRoute
@@ -134,9 +150,11 @@ export interface FileRoutesById {
   '/cloud': typeof CloudRoute
   '/dashboard': typeof DashboardRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/loteria': typeof LoteriaRoute
   '/marketplace': typeof MarketplaceRoute
   '/offerwall': typeof OfferwallRoute
   '/ptc': typeof PtcRoute
+  '/ruleta': typeof RuletaRoute
   '/shop': typeof ShopRoute
   '/wallet': typeof WalletRoute
   '/games/$slug': typeof GamesSlugRoute
@@ -152,9 +170,11 @@ export interface FileRouteTypes {
     | '/cloud'
     | '/dashboard'
     | '/leaderboard'
+    | '/loteria'
     | '/marketplace'
     | '/offerwall'
     | '/ptc'
+    | '/ruleta'
     | '/shop'
     | '/wallet'
     | '/games/$slug'
@@ -168,9 +188,11 @@ export interface FileRouteTypes {
     | '/cloud'
     | '/dashboard'
     | '/leaderboard'
+    | '/loteria'
     | '/marketplace'
     | '/offerwall'
     | '/ptc'
+    | '/ruleta'
     | '/shop'
     | '/wallet'
     | '/games/$slug'
@@ -184,9 +206,11 @@ export interface FileRouteTypes {
     | '/cloud'
     | '/dashboard'
     | '/leaderboard'
+    | '/loteria'
     | '/marketplace'
     | '/offerwall'
     | '/ptc'
+    | '/ruleta'
     | '/shop'
     | '/wallet'
     | '/games/$slug'
@@ -201,9 +225,11 @@ export interface RootRouteChildren {
   CloudRoute: typeof CloudRoute
   DashboardRoute: typeof DashboardRoute
   LeaderboardRoute: typeof LeaderboardRoute
+  LoteriaRoute: typeof LoteriaRoute
   MarketplaceRoute: typeof MarketplaceRoute
   OfferwallRoute: typeof OfferwallRoute
   PtcRoute: typeof PtcRoute
+  RuletaRoute: typeof RuletaRoute
   ShopRoute: typeof ShopRoute
   WalletRoute: typeof WalletRoute
   GamesSlugRoute: typeof GamesSlugRoute
@@ -228,6 +254,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ruleta': {
+      id: '/ruleta'
+      path: '/ruleta'
+      fullPath: '/ruleta'
+      preLoaderRoute: typeof RuletaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ptc': {
       id: '/ptc'
       path: '/ptc'
@@ -247,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/marketplace'
       fullPath: '/marketplace'
       preLoaderRoute: typeof MarketplaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/loteria': {
+      id: '/loteria'
+      path: '/loteria'
+      fullPath: '/loteria'
+      preLoaderRoute: typeof LoteriaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/leaderboard': {
@@ -321,9 +361,11 @@ const rootRouteChildren: RootRouteChildren = {
   CloudRoute: CloudRoute,
   DashboardRoute: DashboardRoute,
   LeaderboardRoute: LeaderboardRoute,
+  LoteriaRoute: LoteriaRoute,
   MarketplaceRoute: MarketplaceRoute,
   OfferwallRoute: OfferwallRoute,
   PtcRoute: PtcRoute,
+  RuletaRoute: RuletaRoute,
   ShopRoute: ShopRoute,
   WalletRoute: WalletRoute,
   GamesSlugRoute: GamesSlugRoute,
