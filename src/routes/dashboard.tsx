@@ -67,7 +67,11 @@ function DashboardPage() {
   };
 
   return (
-    <AppShell title="SALA DE MINADO" subtitle={`Bienvenido de vuelta, @${state.username}. Tus máquinas nunca duermen.`}>
+    <AppShell
+      title="CENTRO DE OPERACIONES DE MINADO"
+      subtitle={`Operador @${state.username} · supervisa el rendimiento de tu infraestructura, la asignación de hash y las recompensas del pool en tiempo real.`}
+    >
+
       <section className="cm-cols cm-cols--compact">
         {/* LEAGUE */}
         <div className={`cm-panel cm-panel--sm cm-league ${rank.league.cls}`}>
