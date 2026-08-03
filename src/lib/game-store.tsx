@@ -100,12 +100,16 @@ const newRig = (model: string): Rig => ({
 
 const initial = (username: string): SaveState => ({
   username,
+  avatar: "visor",
   ct: 500,
   ltc: 0,
   coins: emptyCoins(),
   owned: [1],
   rigs: [{ ...newRig("shelf"), slots: [1, null, null] }],
+  parts: {},
+  boosters: {},
   cloud: [],
+
   splits: defaultSplits(),
   cycleStart: Date.now(),
   claimed: 0,
