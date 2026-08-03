@@ -5,6 +5,17 @@ import { SplitModal } from "@/components/SplitModal";
 import { useGame, fmt, CYCLE_MS, NETWORK_POWER } from "@/lib/game-store";
 import { COINS, fmtCoin } from "@/lib/coins";
 import { getRank, rankRequirement, RANK_COUNT } from "@/lib/leagues";
+import { PARTS, BOOSTERS } from "@/data/parts";
+
+type InvTab = "miners" | "racks" | "parts" | "boosters";
+
+const INV_TABS: { key: InvTab; label: string }[] = [
+  { key: "miners", label: "MINEROS" },
+  { key: "racks", label: "RACKS" },
+  { key: "parts", label: "COMPONENTES" },
+  { key: "boosters", label: "BOOSTERS" },
+];
+
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -32,6 +43,7 @@ function DashboardPage() {
   } = useGame();
   const [split, setSplit] = useState(false);
   const [picked, setPicked] = useState<number | null>(null);
+  const [tab, setTab] = useState<InvTab>("miners");
   if (!state) return <AppShell title="DASHBOARD">{null}</AppShell>;
 
   const rank = getRank(power);
@@ -39,6 +51,9 @@ function DashboardPage() {
   const ready = timeLeft <= 0;
   const active = COINS.filter((c) => splitPct[c.key] > 0);
   const invCount = ownedMiners.reduce((s, o) => s + o.count, 0);
+  const partCount = Object.values(state.parts ?? {}).reduce((s, n) => s + n, 0);
+  const boostCount = Object.values(state.boosters ?? {}).reduce((s, n) => s + n, 0);
+
 
   const onSlot = (rigId: string, slot: number, filled: boolean) => {
     if (filled) {
@@ -52,7 +67,11 @@ function DashboardPage() {
   };
 
   return (
-    <AppShell title="SALA DE MINADO" subtitle={`Bienvenido de vuelta, @${state.username}. Tus máquinas nunca duermen.`}>
+    <AppShell
+      title="CENTRO DE OPERACIONES DE MINADO"
+      subtitle={`Operador @${state.username} · supervisa el rendimiento de tu infraestructura, la asignación de hash y las recompensas del pool en tiempo real.`}
+    >
+
       <section className="cm-cols cm-cols--compact">
         {/* LEAGUE */}
         <div className={`cm-panel cm-panel--sm cm-league ${rank.league.cls}`}>
@@ -132,36 +151,113 @@ function DashboardPage() {
       </section>
 
       {/* INVENTORY */}
-      <h2 className="cm-h2">INVENTARIO ({invCount})</h2>
-      <p className="cm-note">
-        {picked != null
-          ? "Ahora pulsa un slot vacío de un rack para montarlo."
-          : "Pulsa un minero para seleccionarlo y móntalo en un rack. Pulsa un minero montado para devolverlo al inventario."}
-      </p>
-      {invCount === 0 ? (
-        <p className="cm-note">Inventario vacío. Compra hardware en la SHOP.</p>
-      ) : (
-        <div className="cm-inv">
-          {ownedMiners.map(({ miner, count }) => (
+      <div className="cm-invbox">
+        <div className="cm-invbox__head">
+          <div>
+            <div className="cm-invbox__title">INVENTARIO DE ACTIVOS</div>
+            <p className="cm-note cm-note--xs">
+              {picked != null
+                ? "Selecciona un slot libre de un rack para instalar la unidad."
+                : "Selecciona una unidad para desplegarla. Pulsa una unidad montada para devolverla al inventario."}
+            </p>
+          </div>
+          <span className="cm-chip">{invCount + rigs.length + partCount + boostCount} UNIDADES</span>
+        </div>
+
+        <div className="cm-invbox__tabs">
+          {INV_TABS.map((tb) => (
             <button
+              key={tb.key}
               type="button"
-              key={miner.id}
-              className={`cm-invcard tier-${miner.tier.toLowerCase()} ${picked === miner.id ? "is-picked" : ""}`}
-              onClick={() => setPicked((p) => (p === miner.id ? null : miner.id))}
+              className={`cm-tab ${tab === tb.key ? "is-active" : ""}`}
+              onClick={() => setTab(tb.key)}
             >
-              <img src={miner.image} alt={miner.name} loading="lazy" />
-              <b>{miner.name}</b>
-              <span>{fmt(miner.hashRate)} TH/s</span>
-              <em className="cm-invcard__x">x{count}</em>
+              {tb.label} ({tb.key === "miners" ? invCount : tb.key === "racks" ? rigs.length : tb.key === "parts" ? partCount : boostCount})
             </button>
           ))}
         </div>
-      )}
 
-      <h2 className="cm-h2">TUS RACKS</h2>
+        <div className="cm-invbox__body">
+          {tab === "miners" ? (
+            invCount === 0 ? (
+              <p className="cm-note">Sin mineros en stock. Adquiere hardware en la TIENDA.</p>
+            ) : (
+              <div className="cm-inv">
+                {ownedMiners.map(({ miner, count }) => (
+                  <button
+                    type="button"
+                    key={miner.id}
+                    className={`cm-invcard tier-${miner.tier.toLowerCase()} ${picked === miner.id ? "is-picked" : ""}`}
+                    onClick={() => setPicked((p) => (p === miner.id ? null : miner.id))}
+                  >
+                    <img src={miner.image} alt={miner.name} loading="lazy" />
+                    <b>{miner.name}</b>
+                    <span>{fmt(miner.hashRate)} TH/s</span>
+                    <em className="cm-invcard__x">x{count}</em>
+                  </button>
+                ))}
+              </div>
+            )
+          ) : null}
+
+          {tab === "racks" ? (
+            rigs.length === 0 ? (
+              <p className="cm-note">Sin racks registrados. Amplía tu infraestructura en la TIENDA.</p>
+            ) : (
+              <div className="cm-inv">
+                {rigs.map(({ rig, model, miners }, i) => (
+                  <div className="cm-invcard cm-invcard--static" key={rig.id}>
+                    <span className="cm-invcard__glyph">{model.icon}</span>
+                    <b>{model.name}</b>
+                    <span>{miners.filter(Boolean).length}/{model.slots} slots</span>
+                    <em className="cm-invcard__x">#{String(i + 1).padStart(2, "0")}</em>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : null}
+
+          {tab === "parts" ? (
+            partCount === 0 ? (
+              <p className="cm-note">Sin componentes en stock. Los recambios mejoran la eficiencia de tus racks.</p>
+            ) : (
+              <div className="cm-inv">
+                {PARTS.filter((p) => (state.parts[p.key] ?? 0) > 0).map((p) => (
+                  <div className="cm-invcard cm-invcard--static" key={p.key}>
+                    <span className="cm-invcard__glyph">{p.icon}</span>
+                    <b>{p.name}</b>
+                    <span>+{p.bonusPct}% hash</span>
+                    <em className="cm-invcard__x">x{state.parts[p.key]}</em>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : null}
+
+          {tab === "boosters" ? (
+            boostCount === 0 ? (
+              <p className="cm-note">Sin boosters activos. Los boosters multiplican tu hash rate temporalmente.</p>
+            ) : (
+              <div className="cm-inv">
+                {BOOSTERS.filter((b) => (state.boosters[b.key] ?? 0) > 0).map((b) => (
+                  <div className="cm-invcard cm-invcard--static" key={b.key}>
+                    <span className="cm-invcard__glyph">{b.icon}</span>
+                    <b>{b.name}</b>
+                    <span>x{b.mult} · {b.hours}h</span>
+                    <em className="cm-invcard__x">x{state.boosters[b.key]}</em>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : null}
+        </div>
+      </div>
+
+      <h2 className="cm-h2">INFRAESTRUCTURA · RACKS ACTIVOS</h2>
       {rigs.length === 0 ? (
         <p className="cm-note">No tienes racks. Cómprate uno en la SHOP.</p>
       ) : (
+
         <div className="cm-racks">
           {rigs.map(({ rig, model, miners, power: rp }, ri) => (
             <div className="cm-rack" key={rig.id}>

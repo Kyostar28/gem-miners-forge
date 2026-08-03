@@ -3,23 +3,31 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useGame, fmt } from "@/lib/game-store";
 import { getRank, RANK_COUNT } from "@/lib/leagues";
 import { COINS, fmtCoin } from "@/lib/coins";
+import { useUi, THEMES, type ThemeKey, type Lang } from "@/lib/ui-prefs";
+import { AVATARS, AVATAR_MAP } from "@/data/avatars";
 
 const NAV = [
-  { to: "/dashboard", label: "DASHBOARD", icon: "▚" },
-  { to: "/games", label: "GAMES", icon: "◉" },
-  { to: "/shop", label: "SHOP", icon: "🛒" },
-  { to: "/marketplace", label: "MARKETPLACE", icon: "⇄" },
-  { to: "/cloud", label: "CLOUD MINING", icon: "☁" },
-  { to: "/wallet", label: "WALLET", icon: "◈" },
-
-  { to: "/leaderboard", label: "LEADERBOARD", icon: "★" },
-  { to: "/achievements", label: "LOGROS", icon: "🏆" },
+  { to: "/dashboard", key: "nav.dashboard", icon: "▚" },
+  { to: "/games", key: "nav.games", icon: "◉" },
+  { to: "/shop", key: "nav.shop", icon: "🛒" },
+  { to: "/marketplace", key: "nav.marketplace", icon: "⇄" },
+  { to: "/cloud", key: "nav.cloud", icon: "☁" },
+  { to: "/wallet", key: "nav.wallet", icon: "◈" },
+  { to: "/ptc", key: "nav.ptc", icon: "▶" },
+  { to: "/offerwall", key: "nav.offerwall", icon: "▦" },
+  { to: "/ruleta", key: "nav.roulette", icon: "◍" },
+  { to: "/loteria", key: "nav.lottery", icon: "❖" },
+  { to: "/leaderboard", key: "nav.leaderboard", icon: "★" },
+  { to: "/achievements", key: "nav.achievements", icon: "🏆" },
 ] as const;
 
 export function AppShell({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
-  const { state, ready, logout, power, balance } = useGame();
+  const { state, ready, logout, power, balance, update } = useGame();
+  const { t, theme, setTheme, lang, setLang } = useUi();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [panel, setPanel] = useState<"theme" | "lang" | null>(null);
+  const [avatarPicker, setAvatarPicker] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
@@ -28,6 +36,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
 
   useEffect(() => {
     setOpen(false);
+    setPanel(null);
   }, [pathname]);
 
   if (!ready || !state) {
@@ -39,7 +48,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
   }
 
   const rank = getRank(power);
-  const initials = state.username.slice(0, 2).toUpperCase();
+  const avatar = AVATAR_MAP[state.avatar] ?? AVATARS[0];
   const topCoins = COINS.filter((c) => balance(c.key) > 0).slice(0, 3);
 
   return (
@@ -53,10 +62,15 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
         {/* professional user / league card */}
         <div className={`cm-usercard ${rank.league.cls}`}>
           <div className="cm-usercard__top">
-            <div className="cm-usercard__avatar">
-              {initials}
+            <button
+              type="button"
+              className="cm-usercard__avatar"
+              onClick={() => setAvatarPicker(true)}
+              title={t("avatar.title")}
+            >
+              <img src={avatar.src} alt={avatar.name} width={512} height={512} loading="lazy" />
               <span className="cm-usercard__status" aria-hidden />
-            </div>
+            </button>
             <div className="cm-usercard__id">
               <b>@{state.username}</b>
               <small>ID #{String(state.owned.length * 7 + state.claimed + 1024).padStart(6, "0")}</small>
@@ -69,7 +83,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
             </div>
             <div>
               <div className="cm-usercard__lname">{rank.league.name}</div>
-              <div className="cm-usercard__lmeta">RANK {rank.index + 1}/{RANK_COUNT}</div>
+              <div className="cm-usercard__lmeta">{t("side.rank")} {rank.index + 1}/{RANK_COUNT}</div>
             </div>
           </div>
 
@@ -92,24 +106,64 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
               activeOptions={{ exact: false }}
             >
               <span aria-hidden>{item.icon}</span>
-              {item.label}
+              {t(item.key)}
             </Link>
           ))}
         </nav>
 
-        <div className="cm-side__bal">
-          <div className="cm-bal">
-            <span className="cm-bal__k">CT</span>
-            <span className="cm-bal__v">{fmt(state.ct, 2)}</span>
+        <div className="cm-side__prefs">
+          <div className="cm-prefs">
+            <button type="button" className="cm-pref" onClick={() => setPanel((p) => (p === "theme" ? null : "theme"))}>
+              <span className="cm-pref__dot" style={{ background: THEMES.find((x) => x.key === theme)?.swatch }} />
+              {t("side.theme")}
+            </button>
+            <button type="button" className="cm-pref" onClick={() => setPanel((p) => (p === "lang" ? null : "lang"))}>
+              <span aria-hidden>🌐</span>
+              {lang.toUpperCase()}
+            </button>
           </div>
-          <div className="cm-bal cm-bal--ltc">
-            <span className="cm-bal__k">LTC</span>
-            <span className="cm-bal__v">{fmt(state.ltc, 5)}</span>
-          </div>
+
+          {panel === "theme" ? (
+            <div className="cm-pref__pop">
+              {THEMES.map((th) => (
+                <button
+                  key={th.key}
+                  type="button"
+                  className={`cm-pref__opt ${theme === th.key ? "is-on" : ""}`}
+                  onClick={() => {
+                    setTheme(th.key as ThemeKey);
+                    setPanel(null);
+                  }}
+                >
+                  <span className="cm-pref__dot" style={{ background: th.swatch }} />
+                  {th.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          {panel === "lang" ? (
+            <div className="cm-pref__pop">
+              {(["es", "en"] as Lang[]).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  className={`cm-pref__opt ${lang === l ? "is-on" : ""}`}
+                  onClick={() => {
+                    setLang(l);
+                    setPanel(null);
+                  }}
+                >
+                  <span aria-hidden>{l === "es" ? "🇪🇸" : "🇬🇧"}</span>
+                  {l === "es" ? "Español" : "English"}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <button type="button" className="cm-logout" onClick={logout}>
-          LOG OUT
+          {t("side.logout")}
         </button>
       </aside>
 
@@ -136,6 +190,36 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
         </header>
         {children}
       </main>
+
+      {avatarPicker ? (
+        <div className="cm-modal" role="dialog" aria-modal="true">
+          <div className="cm-modal__backdrop" onClick={() => setAvatarPicker(false)} />
+          <div className="cm-modal__box">
+            <div className="cm-modal__head">
+              <span>{t("avatar.title")}</span>
+              <button type="button" className="cm-modal__x" onClick={() => setAvatarPicker(false)}>
+                ✕
+              </button>
+            </div>
+            <div className="cm-avatars">
+              {AVATARS.map((a) => (
+                <button
+                  key={a.key}
+                  type="button"
+                  className={`cm-avatar ${state.avatar === a.key ? "is-on" : ""}`}
+                  onClick={() => {
+                    update({ avatar: a.key });
+                    setAvatarPicker(false);
+                  }}
+                >
+                  <img src={a.src} alt={a.name} width={512} height={512} loading="lazy" />
+                  <span>{a.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
