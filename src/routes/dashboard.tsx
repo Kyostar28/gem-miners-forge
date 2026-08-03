@@ -5,6 +5,17 @@ import { SplitModal } from "@/components/SplitModal";
 import { useGame, fmt, CYCLE_MS, NETWORK_POWER } from "@/lib/game-store";
 import { COINS, fmtCoin } from "@/lib/coins";
 import { getRank, rankRequirement, RANK_COUNT } from "@/lib/leagues";
+import { PARTS, BOOSTERS } from "@/data/parts";
+
+type InvTab = "miners" | "racks" | "parts" | "boosters";
+
+const INV_TABS: { key: InvTab; label: string }[] = [
+  { key: "miners", label: "MINEROS" },
+  { key: "racks", label: "RACKS" },
+  { key: "parts", label: "COMPONENTES" },
+  { key: "boosters", label: "BOOSTERS" },
+];
+
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
