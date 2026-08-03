@@ -141,8 +141,12 @@ function migrate(raw: Partial<SaveState> & { splitCt?: number }): SaveState {
   return {
     ...base,
     ...raw,
+    avatar: raw.avatar ?? "visor",
     rigs,
+    parts: raw.parts ?? {},
+    boosters: raw.boosters ?? {},
     cloud: raw.cloud ?? [],
+
     coins: { ...base.coins, ...(raw.coins ?? {}) },
     splits,
     games: { ...base.games, ...(raw.games ?? {}) },
