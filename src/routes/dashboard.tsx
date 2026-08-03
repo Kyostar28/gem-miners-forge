@@ -43,6 +43,7 @@ function DashboardPage() {
   } = useGame();
   const [split, setSplit] = useState(false);
   const [picked, setPicked] = useState<number | null>(null);
+  const [tab, setTab] = useState<InvTab>("miners");
   if (!state) return <AppShell title="DASHBOARD">{null}</AppShell>;
 
   const rank = getRank(power);
@@ -50,6 +51,9 @@ function DashboardPage() {
   const ready = timeLeft <= 0;
   const active = COINS.filter((c) => splitPct[c.key] > 0);
   const invCount = ownedMiners.reduce((s, o) => s + o.count, 0);
+  const partCount = Object.values(state.parts ?? {}).reduce((s, n) => s + n, 0);
+  const boostCount = Object.values(state.boosters ?? {}).reduce((s, n) => s + n, 0);
+
 
   const onSlot = (rigId: string, slot: number, filled: boolean) => {
     if (filled) {
