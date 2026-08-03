@@ -945,3 +945,100 @@ html[data-theme="white"] .cm-btn { color: #ffffff; }
 .cm-cols--compact .cm-coinrow { padding: 4px 6px; font-size: 10px; }
 .cm-cols--compact .cm-coinrow { grid-template-columns: 12px 30px 1fr; gap: 4px; }
 .cm-cols--compact .cm-coinrow__val { font-size: 9px; text-align: right; overflow: hidden; text-overflow: ellipsis; }
+
+/* ============ GLOBAL FONT ============ */
+body, button, input, select, textarea { font-family: var(--cm-mono); }
+
+/* ============ SIDEBAR PREFS ============ */
+.cm-side__prefs { margin-top: auto; display: grid; gap: .4rem; position: relative; }
+.cm-prefs { display: grid; grid-template-columns: 1fr auto; gap: .4rem; }
+.cm-pref {
+  display: flex; align-items: center; justify-content: center; gap: .4rem;
+  font-family: var(--cm-mono); background: var(--cm-panel); border: 1px solid var(--cm-border);
+  color: var(--cm-text); border-radius: 6px; padding: .5rem .6rem; cursor: pointer;
+  letter-spacing: .12em; font-size: .62rem; transition: border-color .2s, color .2s;
+}
+.cm-pref:hover { border-color: var(--cm-green); color: var(--cm-green); }
+.cm-pref__dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px currentColor; }
+.cm-pref__pop {
+  display: grid; gap: .3rem; border: 1px solid var(--cm-green); border-radius: 8px;
+  background: var(--cm-panel-2); padding: .4rem; box-shadow: 0 0 30px -14px var(--cm-green);
+}
+.cm-pref__opt {
+  display: flex; align-items: center; gap: .5rem; font-family: var(--cm-mono);
+  background: transparent; border: 1px solid transparent; color: var(--cm-text);
+  border-radius: 6px; padding: .4rem .5rem; cursor: pointer; font-size: .64rem; letter-spacing: .1em; text-align: left;
+}
+.cm-pref__opt:hover { border-color: var(--cm-border); }
+.cm-pref__opt.is-on { color: var(--cm-green); border-color: var(--cm-green); }
+
+/* ============ AVATARS ============ */
+.cm-usercard__avatar { padding: 0; overflow: visible; cursor: pointer; width: 44px; height: 44px; }
+.cm-usercard__avatar img { width: 100%; height: 100%; object-fit: contain; border-radius: 7px; }
+.cm-avatars { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: .6rem; }
+.cm-avatar {
+  display: grid; justify-items: center; gap: .35rem; padding: .5rem;
+  background: var(--cm-panel); border: 1px solid var(--cm-border); border-radius: 10px;
+  color: var(--cm-text); font-family: var(--cm-mono); font-size: .55rem; letter-spacing: .06em; cursor: pointer;
+  transition: transform .18s, border-color .18s, box-shadow .18s;
+}
+.cm-avatar img { width: 62px; height: 62px; object-fit: contain; }
+.cm-avatar:hover { transform: translateY(-2px); border-color: var(--cm-green); }
+.cm-avatar.is-on { border-color: var(--cm-green); box-shadow: 0 0 22px -8px var(--cm-green); }
+
+/* ============ INVENTORY BOX ============ */
+.cm-invbox {
+  border: 1px solid var(--cm-border); border-radius: 14px; background: var(--cm-panel);
+  padding: 1rem; margin: 1.25rem 0; box-shadow: inset 0 0 60px -40px var(--cm-green);
+}
+.cm-invbox__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.cm-invbox__title { color: var(--cm-green); letter-spacing: .18em; font-size: .8rem; margin-bottom: .25rem; }
+.cm-invbox__tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: .8rem 0; }
+.cm-invbox__tabs .cm-tab { font-size: .62rem; padding: .4rem .7rem; letter-spacing: .12em; }
+.cm-invbox__body { min-height: 120px; }
+.cm-invcard--static { cursor: default; }
+.cm-invcard__glyph { font-size: 26px; line-height: 1; }
+
+/* ============ LIST / OFFERS (PTC + OFFERWALL) ============ */
+.cm-list { display: grid; gap: .55rem; margin-bottom: 1rem; }
+.cm-listrow {
+  display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: .8rem;
+  border: 1px solid var(--cm-border); border-radius: 10px; padding: .7rem .9rem; background: var(--cm-panel);
+}
+.cm-listrow b { display: block; color: var(--cm-green); font-size: .78rem; letter-spacing: .1em; }
+.cm-listrow small { color: var(--cm-mute); font-size: .64rem; }
+.cm-offers { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .8rem; margin-bottom: 1rem; }
+.cm-offer {
+  display: grid; gap: .5rem; align-content: start; border: 1px solid var(--cm-border);
+  border-left: 3px solid var(--cm-accent, var(--cm-green)); border-radius: 12px; padding: .85rem; background: var(--cm-panel);
+}
+.cm-offer__head span { font-size: .56rem; letter-spacing: .2em; color: var(--cm-mute); }
+.cm-offer__head b { display: block; color: var(--cm-accent, var(--cm-green)); letter-spacing: .1em; font-size: .82rem; }
+.cm-offer p { font-size: .68rem; color: var(--cm-text); opacity: .8; }
+.cm-offer__rew { display: flex; gap: .4rem; flex-wrap: wrap; }
+
+/* ============ ROULETTE ============ */
+.cm-wheelwrap { display: grid; justify-items: center; gap: 1rem; padding: 1rem 0; position: relative; }
+.cm-wheel {
+  position: relative; width: 260px; height: 260px; border-radius: 50%;
+  border: 4px solid var(--cm-green); box-shadow: 0 0 50px -18px var(--cm-green);
+  transition: transform 4s cubic-bezier(.15,.9,.15,1);
+}
+.cm-wheel__lbl {
+  position: absolute; left: 50%; top: 50%; transform-origin: 0 0; font-size: .56rem;
+  color: #05130c; letter-spacing: .08em; font-weight: 700;
+}
+.cm-wheel__pin {
+  width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent;
+  border-top: 18px solid var(--cm-green); position: relative; top: 6px; z-index: 2;
+}
+.cm-wheel__actions { display: grid; justify-items: center; gap: .5rem; }
+
+/* ============ LOTTERY ============ */
+.cm-jackpot { font-size: 1.6rem; color: var(--cm-green); letter-spacing: .08em; text-shadow: 0 0 16px color-mix(in oklab, var(--cm-green) 50%, transparent); margin: .3rem 0 .5rem; }
+.cm-balls { display: flex; gap: .4rem; flex-wrap: wrap; margin: .35rem 0 .8rem; }
+.cm-ball {
+  width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%;
+  border: 1px solid var(--cm-border); background: var(--cm-panel-2); color: var(--cm-text); font-size: .68rem;
+}
+.cm-ball.is-on { border-color: var(--cm-green); color: var(--cm-green); box-shadow: 0 0 14px -4px var(--cm-green); }
