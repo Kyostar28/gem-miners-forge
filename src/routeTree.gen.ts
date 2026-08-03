@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as ShopRouteImport } from './routes/shop'
+import { Route as PtcRouteImport } from './routes/ptc'
+import { Route as OfferwallRouteImport } from './routes/offerwall'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -30,6 +32,16 @@ const WalletRoute = WalletRouteImport.update({
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PtcRoute = PtcRouteImport.update({
+  id: '/ptc',
+  path: '/ptc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfferwallRoute = OfferwallRouteImport.update({
+  id: '/offerwall',
+  path: '/offerwall',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarketplaceRoute = MarketplaceRouteImport.update({
@@ -90,6 +102,8 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/leaderboard': typeof LeaderboardRoute
   '/marketplace': typeof MarketplaceRoute
+  '/offerwall': typeof OfferwallRoute
+  '/ptc': typeof PtcRoute
   '/shop': typeof ShopRoute
   '/wallet': typeof WalletRoute
   '/games/$slug': typeof GamesSlugRoute
@@ -104,6 +118,8 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/leaderboard': typeof LeaderboardRoute
   '/marketplace': typeof MarketplaceRoute
+  '/offerwall': typeof OfferwallRoute
+  '/ptc': typeof PtcRoute
   '/shop': typeof ShopRoute
   '/wallet': typeof WalletRoute
   '/games/$slug': typeof GamesSlugRoute
@@ -119,6 +135,8 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/leaderboard': typeof LeaderboardRoute
   '/marketplace': typeof MarketplaceRoute
+  '/offerwall': typeof OfferwallRoute
+  '/ptc': typeof PtcRoute
   '/shop': typeof ShopRoute
   '/wallet': typeof WalletRoute
   '/games/$slug': typeof GamesSlugRoute
@@ -135,6 +153,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leaderboard'
     | '/marketplace'
+    | '/offerwall'
+    | '/ptc'
     | '/shop'
     | '/wallet'
     | '/games/$slug'
@@ -149,6 +169,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leaderboard'
     | '/marketplace'
+    | '/offerwall'
+    | '/ptc'
     | '/shop'
     | '/wallet'
     | '/games/$slug'
@@ -163,6 +185,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leaderboard'
     | '/marketplace'
+    | '/offerwall'
+    | '/ptc'
     | '/shop'
     | '/wallet'
     | '/games/$slug'
@@ -178,6 +202,8 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   LeaderboardRoute: typeof LeaderboardRoute
   MarketplaceRoute: typeof MarketplaceRoute
+  OfferwallRoute: typeof OfferwallRoute
+  PtcRoute: typeof PtcRoute
   ShopRoute: typeof ShopRoute
   WalletRoute: typeof WalletRoute
   GamesSlugRoute: typeof GamesSlugRoute
@@ -200,6 +226,20 @@ declare module '@tanstack/react-router' {
       path: '/shop'
       fullPath: '/shop'
       preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ptc': {
+      id: '/ptc'
+      path: '/ptc'
+      fullPath: '/ptc'
+      preLoaderRoute: typeof PtcRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offerwall': {
+      id: '/offerwall'
+      path: '/offerwall'
+      fullPath: '/offerwall'
+      preLoaderRoute: typeof OfferwallRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/marketplace': {
@@ -282,6 +322,8 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   LeaderboardRoute: LeaderboardRoute,
   MarketplaceRoute: MarketplaceRoute,
+  OfferwallRoute: OfferwallRoute,
+  PtcRoute: PtcRoute,
   ShopRoute: ShopRoute,
   WalletRoute: WalletRoute,
   GamesSlugRoute: GamesSlugRoute,
