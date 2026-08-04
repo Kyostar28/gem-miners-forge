@@ -78,35 +78,72 @@ function ShopPage() {
             ))}
           </div>
         </>
+      ) : tab === "RACKS" ? (
+        <>
+          <p className="cm-note cm-note--xs">
+            Espacio libre en tus salas: <b>{freeSlots}</b> rack(s). Si llegas a 0, compra una sala nueva en la pestaña SALAS.
+          </p>
+          <div className="cm-rackshop">
+            {RACKS.map((r) => (
+              <article className={`cm-rackcard tier-${r.tier.toLowerCase()}`} key={r.key}>
+                <div className="cm-rackcard__icon" aria-hidden>{r.icon}</div>
+                <div className="cm-rackcard__body">
+                  <header>
+                    <b>{r.name}</b>
+                    <span className="cm-rackcard__tier">{r.tier}</span>
+                  </header>
+                  <p>{r.desc}</p>
+                  <div className="cm-rackcard__stats">
+                    <span>SLOTS <b>{r.slots}</b></span>
+                    <span>BOOST <b>x{r.boost}</b></span>
+                    <span>TUYOS <b>{owned(r.key)}</b></span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="cm-btn"
+                  disabled={!state || state.ct < r.price || freeSlots === 0}
+                  onClick={() => buyRack(r)}
+                >
+                  {freeSlots === 0 ? "SALAS LLENAS" : r.price === 0 ? "GRATIS" : `${fmt(r.price)} CT`}
+                </button>
+              </article>
+            ))}
+          </div>
+        </>
       ) : (
         <div className="cm-rackshop">
-          {RACKS.map((r) => (
-            <article className={`cm-rackcard tier-${r.tier.toLowerCase()}`} key={r.key}>
-              <div className="cm-rackcard__icon" aria-hidden>{r.icon}</div>
-              <div className="cm-rackcard__body">
-                <header>
-                  <b>{r.name}</b>
-                  <span className="cm-rackcard__tier">{r.tier}</span>
-                </header>
-                <p>{r.desc}</p>
-                <div className="cm-rackcard__stats">
-                  <span>SLOTS <b>{r.slots}</b></span>
-                  <span>BOOST <b>x{r.boost}</b></span>
-                  <span>TUYOS <b>{owned(r.key)}</b></span>
+          {ROOMS.map((rm) => {
+            const mine = rooms.filter((r) => r.model.key === rm.key).length;
+            return (
+              <article className="cm-rackcard cm-roomcard" key={rm.key}>
+                <div className="cm-rackcard__icon" aria-hidden>{rm.icon}</div>
+                <div className="cm-rackcard__body">
+                  <header>
+                    <b>{rm.name}</b>
+                    <span className="cm-rackcard__tier">SALA</span>
+                  </header>
+                  <p>{rm.desc}</p>
+                  <div className="cm-rackcard__stats">
+                    <span>RACKS <b>{ROOM_CAPACITY}</b></span>
+                    <span>EFICIENCIA <b>x{rm.boost}</b></span>
+                    <span>TUYAS <b>{mine}</b></span>
+                  </div>
                 </div>
-              </div>
-              <button
-                type="button"
-                className="cm-btn"
-                disabled={!state || state.ct < r.price}
-                onClick={() => buyRack(r)}
-              >
-                {r.price === 0 ? "GRATIS" : `${fmt(r.price)} CT`}
-              </button>
-            </article>
-          ))}
+                <button
+                  type="button"
+                  className="cm-btn"
+                  disabled={!state || state.ct < rm.price}
+                  onClick={() => buyRoom(rm)}
+                >
+                  {rm.price === 0 ? "INICIAL" : `${fmt(rm.price)} CT`}
+                </button>
+              </article>
+            );
+          })}
         </div>
       )}
+
     </AppShell>
   );
 }
