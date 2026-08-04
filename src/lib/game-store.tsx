@@ -280,7 +280,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const login = useCallback((username: string) => setState(initial(username.trim())), []);
+  const login = useCallback(
+    (username: string, avatar = "visor") => setState(initial(username.trim(), avatar)),
+    [],
+  );
   const logout = useCallback(() => setState(null), []);
 
   /** miner ids currently mounted in rigs (multiset) */
@@ -303,26 +306,70 @@ export function GameProvider({ children }: { children: ReactNode }) {
       .sort((a, b) => b.miner.hashRate - a.miner.hashRate);
   }, [state, mountedIds]);
 
+  const roomBoost = useCallback(
+    (roomId: string) => {
+      const room = (stateRef.current?.rooms ?? []).find((r) => r.id === roomId);
+      return ROOM_MAP[room?.model ?? "garage"]?.boost ?? 1;
+    },
+    [],
+  );
+
   const rigs = useMemo(() => {
+    const roomsList = state?.rooms ?? [];
     return (state?.rigs ?? []).map((rig) => {
       const model = RACK_MAP[rig.model] ?? RACK_MAP.shelf;
+      const rm = roomsList.find((r) => r.id === rig.room);
+      const boost = (ROOM_MAP[rm?.model ?? "garage"]?.boost ?? 1) * model.boost;
       const miners = rig.slots.map((id) => (id == null ? null : (MINERS.find((m) => m.id === id) ?? null)));
-      const rigPower = miners.reduce((s, m) => s + (m ? m.hashRate * model.boost : 0), 0);
+      const rigPower = miners.reduce((s, m) => s + (m ? m.hashRate * boost : 0), 0);
       return { rig, model, miners, power: rigPower };
     });
-  }, [state?.rigs]);
+  }, [state?.rigs, state?.rooms]);
+
+  const rooms = useMemo(() => {
+    const list = state?.rooms ?? [];
+    return list.map((room) => {
+      const model = ROOM_MAP[room.model] ?? ROOM_MAP.garage;
+      const rigIds = (state?.rigs ?? []).filter((r) => r.room === room.id).map((r) => r.id);
+      return { room, model, rigIds, free: Math.max(0, ROOM_CAPACITY - rigIds.length) };
+    });
+  }, [state?.rooms, state?.rigs]);
 
   /** only mounted miners produce hash power */
   const basePower = useMemo(() => rigs.reduce((sum, r) => sum + r.power, 0), [rigs]);
   const power = basePower + (state?.bonusPower ?? 0);
 
   const buyRack = useCallback(
-    (model: RackModel) => {
+    (model: RackModel, roomId?: string) => {
       const s = stateRef.current;
       if (!s || s.ct < model.price) return false;
-      update({ ct: s.ct - model.price, rigs: [...s.rigs, newRig(model.key)] });
+      const count = (id: string) => s.rigs.filter((r) => r.room === id).length;
+      const target =
+        (roomId && count(roomId) < ROOM_CAPACITY ? roomId : null) ??
+        s.rooms.find((r) => count(r.id) < ROOM_CAPACITY)?.id;
+      if (!target) return false; // every room is full: buy another room
+      update({ ct: s.ct - model.price, rigs: [...s.rigs, newRig(model.key, target)] });
       return true;
     },
+    [update],
+  );
+
+  const buyRoom = useCallback(
+    (model: RoomModel) => {
+      const s = stateRef.current;
+      if (!s || s.ct < model.price) return false;
+      update({
+        ct: s.ct - model.price,
+        rooms: [...s.rooms, { id: `room-${uid()}`, model: model.key }],
+      });
+      return true;
+    },
+    [update],
+  );
+
+  const unlockAvatar = useCallback(
+    (key: string) =>
+      update((s) => (s.unlockedAvatars.includes(key) ? {} : { unlockedAvatars: [...s.unlockedAvatars, key] })),
     [update],
   );
 
