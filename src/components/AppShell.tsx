@@ -49,7 +49,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
 
   const rank = getRank(power);
   const avatar = AVATAR_MAP[state.avatar] ?? AVATARS[0];
-  const baseAvatar = AVATARS.find((a) => a.key === state.avatar) ?? AVATARS[0];
+  const baseAvatar = AVATARS.find((a) => a.key === (state.baseAvatar ?? state.avatar)) ?? AVATARS[0];
   const topCoins = COINS.filter((c) => balance(c.key) > 0).slice(0, 3);
 
   return (

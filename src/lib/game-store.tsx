@@ -60,6 +60,8 @@ export interface SaveState {
   username: string;
   /** avatar key from src/data/avatars.ts */
   avatar: string;
+  /** base avatar chosen at signup (never changes) */
+  baseAvatar: string;
   ct: number;
   ltc: number;
   /** balances of the other minable coins */
@@ -118,6 +120,7 @@ const FIRST_ROOM = "room-1";
 const initial = (username: string, avatar = "visor"): SaveState => ({
   username,
   avatar,
+  baseAvatar: avatar,
   ct: 500,
   ltc: 0,
   coins: emptyCoins(),
@@ -183,6 +186,7 @@ function migrate(raw: Partial<SaveState> & { splitCt?: number }): SaveState {
     ...base,
     ...raw,
     avatar: raw.avatar ?? "visor",
+    baseAvatar: raw.baseAvatar ?? raw.avatar ?? "visor",
     unlockedAvatars: raw.unlockedAvatars ?? [],
     rooms,
     rigs,
