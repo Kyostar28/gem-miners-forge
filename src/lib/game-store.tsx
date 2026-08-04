@@ -306,14 +306,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
       .sort((a, b) => b.miner.hashRate - a.miner.hashRate);
   }, [state, mountedIds]);
 
-  const roomBoost = useCallback(
-    (roomId: string) => {
-      const room = (stateRef.current?.rooms ?? []).find((r) => r.id === roomId);
-      return ROOM_MAP[room?.model ?? "garage"]?.boost ?? 1;
-    },
-    [],
-  );
-
   const rigs = useMemo(() => {
     const roomsList = state?.rooms ?? [];
     return (state?.rigs ?? []).map((rig) => {
@@ -609,9 +601,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     basePower,
     ownedMiners,
     rigs,
+    rooms,
     buy,
     sell,
     buyRack,
+    buyRoom,
+    unlockAvatar,
     mount,
     unmount,
     claim,
