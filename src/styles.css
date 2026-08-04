@@ -176,6 +176,8 @@ html[data-theme="white"] {
   --cm-green: #0b8f4d; --cm-green-dim: #0b6a3b; --cm-green-deep: #cdeedd;
   --cm-text: #16241d; --cm-mute: #5f7a6c;
 }
+html[data-theme="white"] .cm-side,
+html[data-theme="white"] .cm-panel,
 html[data-theme="white"] .cm-usercard,
 html[data-theme="white"] .cm-coinrow,
 html[data-theme="white"] .cm-invcard,
@@ -183,12 +185,40 @@ html[data-theme="white"] .cm-input,
 html[data-theme="white"] .cm-modal__box,
 html[data-theme="white"] .cm-slot,
 html[data-theme="white"] .cm-pref__pop,
+html[data-theme="white"] .cm-rack,
+html[data-theme="white"] .cm-rackcard,
+html[data-theme="white"] .cm-ach__card,
+html[data-theme="white"] .cm-card,
+html[data-theme="white"] .cm-login__box,
 html[data-theme="white"] .cm-invbox {
   background: var(--cm-panel);
   color: var(--cm-text);
+  border-color: var(--cm-border);
+  box-shadow: 0 1px 2px rgba(16, 40, 30, .06), 0 8px 24px rgba(16, 40, 30, .06);
 }
+html[data-theme="white"] .cm-invbox__body,
+html[data-theme="white"] .cm-rack__slots,
+html[data-theme="white"] .cm-progress { background: var(--cm-panel-2); }
+html[data-theme="white"] .cm-nav__link { color: var(--cm-mute); }
+html[data-theme="white"] .cm-nav__link:hover { background: var(--cm-panel-2); color: var(--cm-text); }
+html[data-theme="white"] .cm-nav__link.is-active {
+  background: color-mix(in oklab, var(--cm-green) 12%, #fff);
+  color: var(--cm-green-dim);
+  border-color: color-mix(in oklab, var(--cm-green) 40%, #fff);
+}
+html[data-theme="white"] .cm-title,
+html[data-theme="white"] .cm-h2,
+html[data-theme="white"] .cm-brand { color: var(--cm-green-dim); text-shadow: none; }
+html[data-theme="white"] .cm-note,
+html[data-theme="white"] .cm-sub { color: var(--cm-mute); }
+html[data-theme="white"] .cm-chip { background: var(--cm-panel-2); color: var(--cm-green-dim); border-color: var(--cm-border); }
+html[data-theme="white"] .cm-tab { background: var(--cm-panel); color: var(--cm-mute); border-color: var(--cm-border); }
+html[data-theme="white"] .cm-tab.is-active { background: var(--cm-green); color: #fff; border-color: var(--cm-green); }
 html[data-theme="white"] .cm-modal__backdrop { background: rgba(20,30,25,.45); }
 html[data-theme="white"] .cm-btn { color: #ffffff; }
+html[data-theme="white"] .cm-btn--ghost { color: var(--cm-green-dim); background: var(--cm-panel); }
+html[data-theme="white"] .cm-pool__clock,
+html[data-theme="white"] .cm-league__name { text-shadow: none; }
 
 
 /* --- tier color variants --- */
@@ -1042,3 +1072,37 @@ body, button, input, select, textarea { font-family: var(--cm-mono); }
   border: 1px solid var(--cm-border); background: var(--cm-panel-2); color: var(--cm-text); font-size: .68rem;
 }
 .cm-ball.is-on { border-color: var(--cm-green); color: var(--cm-green); box-shadow: 0 0 14px -4px var(--cm-green); }
+
+
+/* --- dashboard 3-column grid: league+pool / inventory / balances --- */
+.cm-dashgrid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(260px, 1fr) minmax(320px, 1.35fr) minmax(240px, .9fr);
+  align-items: start;
+  margin-bottom: 1.25rem;
+}
+.cm-dashcol { display: grid; gap: 1rem; }
+.cm-invbox--slim { margin: 0; }
+.cm-invbox__body--scroll { max-height: 340px; overflow-y: auto; }
+.cm-roomhead { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+.cm-roomcard { --cm-accent: var(--cm-green); }
+.cm-login__box--wide { max-width: 720px; width: 100%; }
+.cm-login__avatars { margin: 1rem 0; }
+.cm-label--row { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
+.cm-avatars--pick { max-height: 320px; overflow-y: auto; padding-right: .25rem; }
+.cm-avatar--exotic { border-color: color-mix(in oklab, #ffcc22 55%, transparent); }
+.cm-avatar.is-locked { opacity: .35; filter: grayscale(1); cursor: not-allowed; }
+.cm-ach__reward {
+  display: inline-flex; align-items: center; gap: .4rem;
+  margin-top: .35rem; font-size: .7rem; letter-spacing: .08em;
+  color: #ffcc22;
+}
+.cm-ach__reward img { width: 26px; height: 26px; object-fit: contain; }
+@media (max-width: 1200px) {
+  .cm-dashgrid { grid-template-columns: 1fr 1fr; }
+  .cm-dashgrid > .cm-panel--sm:last-child { grid-column: 1 / -1; }
+}
+@media (max-width: 780px) {
+  .cm-dashgrid { grid-template-columns: 1fr; }
+}
