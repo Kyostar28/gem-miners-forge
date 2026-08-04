@@ -11,6 +11,7 @@ import {
 import { MINERS, type Miner } from "@/data/miners";
 import { COINS } from "@/lib/coins";
 import { RACK_MAP, type RackModel } from "@/data/racks";
+import { ROOM_CAPACITY, ROOM_MAP, type RoomModel } from "@/data/rooms";
 
 
 const KEY = "cryptominer:save:v1";
@@ -32,6 +33,13 @@ export interface Rig {
   id: string;
   model: string; // RackModel key
   slots: (number | null)[]; // miner ids
+  /** id of the room this rack lives in */
+  room: string;
+}
+
+export interface Room {
+  id: string;
+  model: string; // RoomModel key
 }
 
 export interface CloudDeposit {
@@ -52,11 +60,17 @@ export interface SaveState {
   username: string;
   /** avatar key from src/data/avatars.ts */
   avatar: string;
+  /** base avatar chosen at signup (never changes) */
+  baseAvatar: string;
   ct: number;
   ltc: number;
   /** balances of the other minable coins */
   coins: Record<string, number>;
+  /** exotic avatars unlocked through achievements */
+  unlockedAvatars: string[];
   owned: number[]; // miner ids owned (inventory + mounted)
+  /** mining rooms owned — each holds up to 6 racks */
+  rooms: Room[];
   /** racks owned by the user */
   rigs: Rig[];
   /** spare parts owned: key -> count */
@@ -92,20 +106,28 @@ const emptyCoins = (): Record<string, number> => {
   return s;
 };
 
-const newRig = (model: string): Rig => ({
-  id: Math.random().toString(16).slice(2, 10),
+const uid = () => Math.random().toString(16).slice(2, 10);
+
+const newRig = (model: string, room: string): Rig => ({
+  id: uid(),
   model,
+  room,
   slots: Array.from({ length: RACK_MAP[model]?.slots ?? 3 }, () => null),
 });
 
-const initial = (username: string): SaveState => ({
+const FIRST_ROOM = "room-1";
+
+const initial = (username: string, avatar = "visor"): SaveState => ({
   username,
-  avatar: "visor",
+  avatar,
+  baseAvatar: avatar,
   ct: 500,
   ltc: 0,
   coins: emptyCoins(),
+  unlockedAvatars: [],
   owned: [1],
-  rigs: [{ ...newRig("shelf"), slots: [1, null, null] }],
+  rooms: [{ id: FIRST_ROOM, model: "garage" }],
+  rigs: [{ ...newRig("shelf", FIRST_ROOM), slots: [1, null, null] }],
   parts: {},
   boosters: {},
   cloud: [],
@@ -135,13 +157,38 @@ function migrate(raw: Partial<SaveState> & { splitCt?: number }): SaveState {
     rigs = [];
     for (let i = 0; i < Math.max(1, Math.ceil(owned.length / 3)); i++) {
       const chunk = owned.slice(i * 3, i * 3 + 3);
-      rigs.push({ ...newRig("shelf"), slots: [chunk[0] ?? null, chunk[1] ?? null, chunk[2] ?? null] });
+      rigs.push({ ...newRig("shelf", FIRST_ROOM), slots: [chunk[0] ?? null, chunk[1] ?? null, chunk[2] ?? null] });
     }
   }
+
+  // rooms: older saves had a flat rack list — split it into rooms of 6
+  let rooms = raw.rooms;
+  if (!rooms || rooms.length === 0) {
+    const needed = Math.max(1, Math.ceil(rigs.length / ROOM_CAPACITY));
+    rooms = Array.from({ length: needed }, (_, i) => ({
+      id: i === 0 ? FIRST_ROOM : `room-${i + 1}`,
+      model: i === 0 ? "garage" : "basement",
+    }));
+  }
+  const roomIds = new Set(rooms.map((r) => r.id));
+  const fill: Record<string, number> = {};
+  rigs = rigs.map((r) => {
+    let room = r.room && roomIds.has(r.room) ? r.room : "";
+    if (!room) {
+      const target = rooms!.find((rm) => (fill[rm.id] ?? 0) < ROOM_CAPACITY) ?? rooms![rooms!.length - 1];
+      room = target.id;
+    }
+    fill[room] = (fill[room] ?? 0) + 1;
+    return { ...r, room };
+  });
+
   return {
     ...base,
     ...raw,
     avatar: raw.avatar ?? "visor",
+    baseAvatar: raw.baseAvatar ?? raw.avatar ?? "visor",
+    unlockedAvatars: raw.unlockedAvatars ?? [],
+    rooms,
     rigs,
     parts: raw.parts ?? {},
     boosters: raw.boosters ?? {},
@@ -161,7 +208,7 @@ function migrate(raw: Partial<SaveState> & { splitCt?: number }): SaveState {
 interface Ctx {
   ready: boolean;
   state: SaveState | null;
-  login: (username: string) => void;
+  login: (username: string, avatar?: string) => void;
   logout: () => void;
   update: (patch: Partial<SaveState> | ((s: SaveState) => Partial<SaveState>)) => void;
   power: number;
@@ -170,9 +217,13 @@ interface Ctx {
   ownedMiners: { miner: Miner; count: number }[];
   /** rigs with their model + mounted miners */
   rigs: { rig: Rig; model: RackModel; miners: (Miner | null)[]; power: number }[];
+  /** rooms with their model and racks */
+  rooms: { room: Room; model: RoomModel; rigIds: string[]; free: number }[];
   buy: (miner: Miner) => boolean;
   sell: (miner: Miner) => boolean;
-  buyRack: (model: RackModel) => boolean;
+  buyRack: (model: RackModel, roomId?: string) => boolean;
+  buyRoom: (model: RoomModel) => boolean;
+  unlockAvatar: (key: string) => void;
   mount: (minerId: number, rigId: string, slot: number) => boolean;
   unmount: (rigId: string, slot: number) => void;
   claim: () => void;
@@ -233,7 +284,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const login = useCallback((username: string) => setState(initial(username.trim())), []);
+  const login = useCallback(
+    (username: string, avatar = "visor") => setState(initial(username.trim(), avatar)),
+    [],
+  );
   const logout = useCallback(() => setState(null), []);
 
   /** miner ids currently mounted in rigs (multiset) */
@@ -257,25 +311,61 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [state, mountedIds]);
 
   const rigs = useMemo(() => {
+    const roomsList = state?.rooms ?? [];
     return (state?.rigs ?? []).map((rig) => {
       const model = RACK_MAP[rig.model] ?? RACK_MAP.shelf;
+      const rm = roomsList.find((r) => r.id === rig.room);
+      const boost = (ROOM_MAP[rm?.model ?? "garage"]?.boost ?? 1) * model.boost;
       const miners = rig.slots.map((id) => (id == null ? null : (MINERS.find((m) => m.id === id) ?? null)));
-      const rigPower = miners.reduce((s, m) => s + (m ? m.hashRate * model.boost : 0), 0);
+      const rigPower = miners.reduce((s, m) => s + (m ? m.hashRate * boost : 0), 0);
       return { rig, model, miners, power: rigPower };
     });
-  }, [state?.rigs]);
+  }, [state?.rigs, state?.rooms]);
+
+  const rooms = useMemo(() => {
+    const list = state?.rooms ?? [];
+    return list.map((room) => {
+      const model = ROOM_MAP[room.model] ?? ROOM_MAP.garage;
+      const rigIds = (state?.rigs ?? []).filter((r) => r.room === room.id).map((r) => r.id);
+      return { room, model, rigIds, free: Math.max(0, ROOM_CAPACITY - rigIds.length) };
+    });
+  }, [state?.rooms, state?.rigs]);
 
   /** only mounted miners produce hash power */
   const basePower = useMemo(() => rigs.reduce((sum, r) => sum + r.power, 0), [rigs]);
   const power = basePower + (state?.bonusPower ?? 0);
 
   const buyRack = useCallback(
-    (model: RackModel) => {
+    (model: RackModel, roomId?: string) => {
       const s = stateRef.current;
       if (!s || s.ct < model.price) return false;
-      update({ ct: s.ct - model.price, rigs: [...s.rigs, newRig(model.key)] });
+      const count = (id: string) => s.rigs.filter((r) => r.room === id).length;
+      const target =
+        (roomId && count(roomId) < ROOM_CAPACITY ? roomId : null) ??
+        s.rooms.find((r) => count(r.id) < ROOM_CAPACITY)?.id;
+      if (!target) return false; // every room is full: buy another room
+      update({ ct: s.ct - model.price, rigs: [...s.rigs, newRig(model.key, target)] });
       return true;
     },
+    [update],
+  );
+
+  const buyRoom = useCallback(
+    (model: RoomModel) => {
+      const s = stateRef.current;
+      if (!s || s.ct < model.price) return false;
+      update({
+        ct: s.ct - model.price,
+        rooms: [...s.rooms, { id: `room-${uid()}`, model: model.key }],
+      });
+      return true;
+    },
+    [update],
+  );
+
+  const unlockAvatar = useCallback(
+    (key: string) =>
+      update((s) => (s.unlockedAvatars.includes(key) ? {} : { unlockedAvatars: [...s.unlockedAvatars, key] })),
     [update],
   );
 
@@ -515,9 +605,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     basePower,
     ownedMiners,
     rigs,
+    rooms,
     buy,
     sell,
     buyRack,
+    buyRoom,
+    unlockAvatar,
     mount,
     unmount,
     claim,

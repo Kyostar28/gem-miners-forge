@@ -4,7 +4,7 @@ import { useGame, fmt } from "@/lib/game-store";
 import { getRank, RANK_COUNT } from "@/lib/leagues";
 import { COINS, fmtCoin } from "@/lib/coins";
 import { useUi, THEMES, type ThemeKey, type Lang } from "@/lib/ui-prefs";
-import { AVATARS, AVATAR_MAP } from "@/data/avatars";
+import { AVATARS, EXOTIC_AVATARS, AVATAR_MAP } from "@/data/avatars";
 
 const NAV = [
   { to: "/dashboard", key: "nav.dashboard", icon: "▚" },
@@ -49,6 +49,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
 
   const rank = getRank(power);
   const avatar = AVATAR_MAP[state.avatar] ?? AVATARS[0];
+  const baseAvatar = AVATARS.find((a) => a.key === (state.baseAvatar ?? state.avatar)) ?? AVATARS[0];
   const topCoins = COINS.filter((c) => balance(c.key) > 0).slice(0, 3);
 
   return (
@@ -201,22 +202,34 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
                 ✕
               </button>
             </div>
+            <p className="cm-note cm-note--xs">
+              El avatar base se elige al crear la cuenta. Los avatares exóticos se desbloquean en LOGROS.
+            </p>
             <div className="cm-avatars">
-              {AVATARS.map((a) => (
-                <button
-                  key={a.key}
-                  type="button"
-                  className={`cm-avatar ${state.avatar === a.key ? "is-on" : ""}`}
-                  onClick={() => {
-                    update({ avatar: a.key });
-                    setAvatarPicker(false);
-                  }}
-                >
-                  <img src={a.src} alt={a.name} width={512} height={512} loading="lazy" />
-                  <span>{a.name}</span>
-                </button>
-              ))}
+              <button type="button" className={`cm-avatar ${state.avatar === baseAvatar.key ? "is-on" : ""}`} onClick={() => { update({ avatar: baseAvatar.key }); setAvatarPicker(false); }}>
+                <img src={baseAvatar.src} alt={baseAvatar.name} width={512} height={512} loading="lazy" />
+                <span>{baseAvatar.name}</span>
+              </button>
+              {EXOTIC_AVATARS.map((a) => {
+                const locked = !(state.unlockedAvatars ?? []).includes(a.key);
+                return (
+                  <button
+                    key={a.key}
+                    type="button"
+                    className={`cm-avatar cm-avatar--exotic ${state.avatar === a.key ? "is-on" : ""} ${locked ? "is-locked" : ""}`}
+                    disabled={locked}
+                    onClick={() => {
+                      update({ avatar: a.key });
+                      setAvatarPicker(false);
+                    }}
+                  >
+                    <img src={a.src} alt={a.name} width={512} height={512} loading="lazy" />
+                    <span>{locked ? "🔒 BLOQUEADO" : a.name}</span>
+                  </button>
+                );
+              })}
             </div>
+
           </div>
         </div>
       ) : null}
