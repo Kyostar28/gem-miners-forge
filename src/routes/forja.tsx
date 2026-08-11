@@ -54,7 +54,7 @@ function ForgePage() {
 
       <h2 className="cm-h2">INVENTARIO DE PIEZAS</h2>
       <div className="cm-forge__bank">
-        {RARITIES.map((r) => (
+        {RARITIES.map((r, i) => (
           <div className="cm-shard" key={r.key} style={{ borderColor: r.color }}>
             <img
               src={SHARD_IMAGE}
@@ -62,7 +62,7 @@ function ForgePage() {
               width={512}
               height={512}
               loading="lazy"
-              style={{ filter: `drop-shadow(0 0 10px ${r.color})`, ["--sh" as string]: r.color }}
+              style={{ filter: `hue-rotate(${i * 62}deg) saturate(1.2) drop-shadow(0 0 10px ${r.color})` }}
             />
             <b style={{ color: r.color }}>{r.name.toUpperCase()}</b>
             <em>x{shards[r.key] ?? 0}</em>
