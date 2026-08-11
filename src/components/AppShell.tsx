@@ -11,6 +11,7 @@ const NAV = [
   { to: "/games", key: "nav.games", icon: "◉" },
   { to: "/shop", key: "nav.shop", icon: "🛒" },
   { to: "/marketplace", key: "nav.marketplace", icon: "⇄" },
+  { to: "/forja", key: "nav.forge", icon: "⚒" },
   { to: "/cloud", key: "nav.cloud", icon: "☁" },
   { to: "/wallet", key: "nav.wallet", icon: "◈" },
   { to: "/ptc", key: "nav.ptc", icon: "▶" },
