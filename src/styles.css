@@ -1119,3 +1119,4 @@ body, button, input, select, textarea { font-family: var(--cm-mono); }
 .cm-forge__meta { display: flex; justify-content: space-between; font-size: 10px; opacity: .75; margin-top: .5rem; }
 .cm-forge__actions { display: flex; flex-direction: column; gap: .4rem; }
 .cm-forge__actions .cm-btn { padding: .4rem .7rem; font-size: 10px; }
+.cm-note--warn { color: #ff7b7b; border-color: #ff7b7b; }
