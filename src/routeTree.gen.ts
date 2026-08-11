@@ -17,6 +17,7 @@ import { Route as OfferwallRouteImport } from './routes/offerwall'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as LoteriaRouteImport } from './routes/loteria'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
+import { Route as ForjaRouteImport } from './routes/forja'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CloudRouteImport } from './routes/cloud'
 import { Route as AchievementsRouteImport } from './routes/achievements'
@@ -66,6 +67,11 @@ const LeaderboardRoute = LeaderboardRouteImport.update({
   path: '/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForjaRoute = ForjaRouteImport.update({
+  id: '/forja',
+  path: '/forja',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/achievements': typeof AchievementsRoute
   '/cloud': typeof CloudRoute
   '/dashboard': typeof DashboardRoute
+  '/forja': typeof ForjaRoute
   '/leaderboard': typeof LeaderboardRoute
   '/loteria': typeof LoteriaRoute
   '/marketplace': typeof MarketplaceRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/achievements': typeof AchievementsRoute
   '/cloud': typeof CloudRoute
   '/dashboard': typeof DashboardRoute
+  '/forja': typeof ForjaRoute
   '/leaderboard': typeof LeaderboardRoute
   '/loteria': typeof LoteriaRoute
   '/marketplace': typeof MarketplaceRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/achievements': typeof AchievementsRoute
   '/cloud': typeof CloudRoute
   '/dashboard': typeof DashboardRoute
+  '/forja': typeof ForjaRoute
   '/leaderboard': typeof LeaderboardRoute
   '/loteria': typeof LoteriaRoute
   '/marketplace': typeof MarketplaceRoute
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/achievements'
     | '/cloud'
     | '/dashboard'
+    | '/forja'
     | '/leaderboard'
     | '/loteria'
     | '/marketplace'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/achievements'
     | '/cloud'
     | '/dashboard'
+    | '/forja'
     | '/leaderboard'
     | '/loteria'
     | '/marketplace'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/achievements'
     | '/cloud'
     | '/dashboard'
+    | '/forja'
     | '/leaderboard'
     | '/loteria'
     | '/marketplace'
@@ -224,6 +236,7 @@ export interface RootRouteChildren {
   AchievementsRoute: typeof AchievementsRoute
   CloudRoute: typeof CloudRoute
   DashboardRoute: typeof DashboardRoute
+  ForjaRoute: typeof ForjaRoute
   LeaderboardRoute: typeof LeaderboardRoute
   LoteriaRoute: typeof LoteriaRoute
   MarketplaceRoute: typeof MarketplaceRoute
@@ -296,6 +309,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/forja': {
+      id: '/forja'
+      path: '/forja'
+      fullPath: '/forja'
+      preLoaderRoute: typeof ForjaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -360,6 +380,7 @@ const rootRouteChildren: RootRouteChildren = {
   AchievementsRoute: AchievementsRoute,
   CloudRoute: CloudRoute,
   DashboardRoute: DashboardRoute,
+  ForjaRoute: ForjaRoute,
   LeaderboardRoute: LeaderboardRoute,
   LoteriaRoute: LoteriaRoute,
   MarketplaceRoute: MarketplaceRoute,

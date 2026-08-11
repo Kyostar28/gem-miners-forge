@@ -16,6 +16,7 @@ const T: Record<string, { es: string; en: string }> = {
   "nav.games": { es: "JUEGOS", en: "GAMES" },
   "nav.shop": { es: "TIENDA", en: "SHOP" },
   "nav.marketplace": { es: "MERCADO", en: "MARKETPLACE" },
+  "nav.forge": { es: "FORJA", en: "FORGE" },
   "nav.cloud": { es: "CLOUD MINING", en: "CLOUD MINING" },
   "nav.wallet": { es: "CARTERA", en: "WALLET" },
   "nav.ptc": { es: "PTC", en: "PTC" },

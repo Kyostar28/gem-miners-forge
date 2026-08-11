@@ -12,6 +12,16 @@ import { MINERS, type Miner } from "@/data/miners";
 import { COINS } from "@/lib/coins";
 import { RACK_MAP, type RackModel } from "@/data/racks";
 import { ROOM_CAPACITY, ROOM_MAP, type RoomModel } from "@/data/rooms";
+import {
+  CRAFT_COUNT,
+  RARITY_MAP,
+  UPGRADE_COUNT,
+  dismantleYield,
+  nextRarity,
+  rarityForTier,
+  upgradeCost,
+  upgradeTarget,
+} from "@/data/forge";
 
 
 const KEY = "cryptominer:save:v1";
@@ -77,6 +87,8 @@ export interface SaveState {
   parts: Record<string, number>;
   /** boosters owned: key -> count */
   boosters: Record<string, number>;
+  /** forge shards owned: rarity -> count */
+  shards: Record<string, number>;
   /** cloud mining contracts */
   cloud: CloudDeposit[];
   /** split weights per coin key (relative, normalized on use) */
@@ -130,6 +142,7 @@ const initial = (username: string, avatar = "visor"): SaveState => ({
   rigs: [{ ...newRig("shelf", FIRST_ROOM), slots: [1, null, null] }],
   parts: {},
   boosters: {},
+  shards: { COMMON: 10 },
   cloud: [],
 
   splits: defaultSplits(),
@@ -192,6 +205,7 @@ function migrate(raw: Partial<SaveState> & { splitCt?: number }): SaveState {
     rigs,
     parts: raw.parts ?? {},
     boosters: raw.boosters ?? {},
+    shards: raw.shards ?? { COMMON: 10 },
     cloud: raw.cloud ?? [],
 
     coins: { ...base.coins, ...(raw.coins ?? {}) },
@@ -236,6 +250,12 @@ interface Ctx {
   setSplits: (s: Record<string, number>) => void;
   balance: (key: string) => number;
   awardPower: (thps: number) => void;
+  /** fusiona 10 piezas de una rareza en 1 de la siguiente (paga CT) */
+  forgeCraft: (rarity: string) => string | null;
+  /** mejora un minero al siguiente tier gastando piezas + CT */
+  forgeUpgrade: (minerId: number) => string | null;
+  /** desguaza un minero del inventario y devuelve piezas */
+  dismantle: (minerId: number) => string | null;
   recordArcade: (slug: string, score: number, won: boolean) => void;
   withdraw: (coin: string, amount: number, address: string) => string | null;
   cloudDeposit: (coin: string, amount: number, source: "balance" | "external") => string | null;
@@ -467,6 +487,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       coins,
       cycleStart: Date.now(),
       claimed: s.claimed + 1,
+      shards: { ...s.shards, COMMON: (s.shards?.COMMON ?? 0) + 2 },
     });
   }, [estimates, update]);
 
@@ -595,6 +616,76 @@ export function GameProvider({ children }: { children: ReactNode }) {
     [update, cloudMined],
   );
 
+  // ---------- FORJA ----------
+  const forgeCraft = useCallback(
+    (rarity: string): string | null => {
+      const s = stateRef.current;
+      if (!s) return "Sesión no iniciada.";
+      const def = RARITY_MAP[rarity];
+      const next = def ? nextRarity(def.key) : null;
+      if (!def || !next) return "Esta rareza no se puede fusionar.";
+      if ((s.shards[rarity] ?? 0) < CRAFT_COUNT) return `Necesitas ${CRAFT_COUNT} piezas ${def.name.toLowerCase()}s.`;
+      if (s.ct < def.craftCt) return "CT insuficiente.";
+      update({
+        ct: s.ct - def.craftCt,
+        shards: {
+          ...s.shards,
+          [rarity]: (s.shards[rarity] ?? 0) - CRAFT_COUNT,
+          [next]: (s.shards[next] ?? 0) + 1,
+        },
+      });
+      return null;
+    },
+    [update],
+  );
+
+  const forgeUpgrade = useCallback(
+    (minerId: number): string | null => {
+      const s = stateRef.current;
+      if (!s) return "Sesión no iniciada.";
+      const miner = MINERS.find((m) => m.id === minerId);
+      if (!miner) return "Minero desconocido.";
+      const mounted = s.rigs.flatMap((r) => r.slots).filter((id) => id === minerId).length;
+      if (s.owned.filter((id) => id === minerId).length - mounted <= 0)
+        return "Desmonta la unidad del rack antes de forjarla.";
+      const target = upgradeTarget(miner);
+      if (!target) return "Esta unidad ya está en el tier máximo.";
+      const rarity = rarityForTier(miner.tier);
+      if ((s.shards[rarity] ?? 0) < UPGRADE_COUNT)
+        return `Necesitas ${UPGRADE_COUNT} piezas ${RARITY_MAP[rarity].name.toLowerCase()}s.`;
+      const cost = upgradeCost(miner);
+      if (s.ct < cost) return "CT insuficiente.";
+      const owned = [...s.owned];
+      owned.splice(owned.indexOf(minerId), 1);
+      owned.push(target.id);
+      update({
+        ct: s.ct - cost,
+        owned,
+        shards: { ...s.shards, [rarity]: (s.shards[rarity] ?? 0) - UPGRADE_COUNT },
+      });
+      return null;
+    },
+    [update],
+  );
+
+  const dismantle = useCallback(
+    (minerId: number): string | null => {
+      const s = stateRef.current;
+      if (!s) return "Sesión no iniciada.";
+      const miner = MINERS.find((m) => m.id === minerId);
+      if (!miner) return "Minero desconocido.";
+      const mounted = s.rigs.flatMap((r) => r.slots).filter((id) => id === minerId).length;
+      if (s.owned.filter((id) => id === minerId).length - mounted <= 0)
+        return "Desmonta la unidad del rack antes de desguazarla.";
+      const { rarity, amount } = dismantleYield(miner);
+      const owned = [...s.owned];
+      owned.splice(owned.indexOf(minerId), 1);
+      update({ owned, shards: { ...s.shards, [rarity]: (s.shards[rarity] ?? 0) + amount } });
+      return null;
+    },
+    [update],
+  );
+
   const value: Ctx = {
     ready,
     state,
@@ -621,6 +712,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setSplits,
     balance,
     awardPower,
+    forgeCraft,
+    forgeUpgrade,
+    dismantle,
     recordArcade,
     withdraw,
     cloudDeposit,

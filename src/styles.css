@@ -1106,3 +1106,17 @@ body, button, input, select, textarea { font-family: var(--cm-mono); }
 @media (max-width: 780px) {
   .cm-dashgrid { grid-template-columns: 1fr; }
 }
+
+/* ---------- FORJA ---------- */
+.cm-forge__bank { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: .7rem; margin-bottom: 1.2rem; }
+.cm-shard { display: flex; flex-direction: column; align-items: center; gap: .35rem; padding: .8rem .5rem; border: 1px solid var(--cm-line); border-radius: 10px; background: var(--cm-panel); }
+.cm-shard img { width: 56px; height: 56px; object-fit: contain; animation: cm-float 4s ease-in-out infinite; }
+.cm-shard b { font-size: 10px; letter-spacing: .12em; }
+.cm-shard em { font-style: normal; font-size: 12px; opacity: .8; }
+.cm-forge__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: .8rem; margin-bottom: 1.2rem; }
+.cm-forge__card { border: 1px solid var(--cm-line); border-radius: 10px; background: var(--cm-panel); padding: .9rem; }
+.cm-forge__recipe { display: flex; align-items: center; justify-content: space-between; gap: .4rem; font-size: 11px; letter-spacing: .08em; }
+.cm-forge__meta { display: flex; justify-content: space-between; font-size: 10px; opacity: .75; margin-top: .5rem; }
+.cm-forge__actions { display: flex; flex-direction: column; gap: .4rem; }
+.cm-forge__actions .cm-btn { padding: .4rem .7rem; font-size: 10px; }
+.cm-note--warn { color: #ff7b7b; border-color: #ff7b7b; }
