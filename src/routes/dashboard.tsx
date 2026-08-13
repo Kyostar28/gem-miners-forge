@@ -253,7 +253,17 @@ function DashboardPage() {
             <div><span>SALAS</span><b>{rooms.length}</b></div>
             <div><span>RACKS</span><b>{rigs.length}</b></div>
           </div>
-          <p className="cm-note cm-note--xs">Rigs {fmt(basePower)} + bonus {fmt(state.bonusPower)} TH/s</p>
+          <p className="cm-note cm-note--xs">
+            Rigs {fmt(basePower)} TH/s
+            {state.bonusPower > 0 ? ` + bonus ${fmt(state.bonusPower)}` : ""}
+            {boostPower > 0 ? ` + boost temporal ${fmt(boostPower, 1)} TH/s (24 h)` : ""}
+          </p>
+          {activeBoosts.length > 0 ? (
+            <p className="cm-note cm-note--xs">
+              {activeBoosts.length} boost(s) activos · próximo vence en{" "}
+              {hleft(Math.min(...activeBoosts.map((b) => b.until)) - now)}
+            </p>
+          ) : null}
         </div>
 
         {/* ROOMS — full width inside the operations grid */}
