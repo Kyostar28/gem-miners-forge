@@ -43,7 +43,7 @@ export function ArcadeShell({ game }: { game: ArcadeGame }) {
     if (status === "idle" || status === "playing" || settled.current) return;
     settled.current = true;
     recordArcade(game.slug, score, status === "won");
-    if (status === "won") awardPower(game.reward);
+    if (status === "won") awardPower(game.reward, game.slug);
   }, [status, score, game.slug, game.reward, recordArcade, awardPower]);
 
   const best = state?.arcade[game.slug]?.best ?? 0;
@@ -59,7 +59,7 @@ export function ArcadeShell({ game }: { game: ArcadeGame }) {
           ))}
         </span>
         <span className="cm-chip">RÉCORD {best}</span>
-        <span className="cm-chip cm-chip--ct">PREMIO +{fmt(game.reward)} TH/s</span>
+        <span className="cm-chip cm-chip--ct">PREMIO +{game.reward} TH/s · 24H</span>
         <Link to="/games" className="cm-btn cm-btn--ghost">MENÚ</Link>
       </div>
 
@@ -98,7 +98,7 @@ function ArcadeOverlay({
         {status === "idle"
           ? `Llega a ${game.target} puntos con 3 vidas.`
           : status === "won"
-            ? `+${fmt(game.reward)} TH/s añadidos a tu poder de minado.`
+            ? `+${game.reward} TH/s temporales durante 24 horas.`
             : `Perdiste tus 3 vidas con ${score} puntos.`}
       </p>
       <div className="cm-over__actions">
