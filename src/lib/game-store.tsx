@@ -153,6 +153,7 @@ const initial = (username: string, avatar = "visor"): SaveState => ({
   games: { memoryWins: 0, snakeBest: 0 },
   arcade: {},
   bonusPower: 0,
+  boosts: [],
   achievements: [],
   withdrawals: [],
 });
@@ -215,6 +216,7 @@ function migrate(raw: Partial<SaveState> & { splitCt?: number }): SaveState {
     games: { ...base.games, ...(raw.games ?? {}) },
     arcade: raw.arcade ?? {},
     bonusPower: raw.bonusPower ?? 0,
+    boosts: (raw.boosts ?? []).filter((b) => b.until > Date.now()),
     achievements: raw.achievements ?? [],
 
     withdrawals: raw.withdrawals ?? [],
@@ -251,7 +253,10 @@ interface Ctx {
   splitPct: Record<string, number>;
   setSplits: (s: Record<string, number>) => void;
   balance: (key: string) => number;
-  awardPower: (thps: number) => void;
+  awardPower: (thps: number, src?: string) => void;
+  /** poder temporal activo (TH/s) y sus boosts vigentes */
+  boostPower: number;
+  activeBoosts: { id: string; th: number; src: string; until: number }[];
   /** fusiona 10 piezas de una rareza en 1 de la siguiente (paga CT) */
   forgeCraft: (rarity: string) => string | null;
   /** mejora un minero al siguiente tier gastando piezas + CT */
@@ -355,7 +360,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   /** only mounted miners produce hash power */
   const basePower = useMemo(() => rigs.reduce((sum, r) => sum + r.power, 0), [rigs]);
-  const power = basePower + (state?.bonusPower ?? 0);
+  const activeBoosts = useMemo(
+    () => (state?.boosts ?? []).filter((b) => b.until > now),
+    [state?.boosts, now],
+  );
+  const boostPower = useMemo(() => activeBoosts.reduce((s, b) => s + b.th, 0), [activeBoosts]);
+  const power = basePower + (state?.bonusPower ?? 0) + boostPower;
 
   const buyRack = useCallback(
     (model: RackModel, roomId?: string) => {
@@ -506,7 +516,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const awardPower = useCallback((thps: number) => update((s) => ({ bonusPower: s.bonusPower + thps })), [update]);
+  /** otorga poder de minado TEMPORAL: caduca a las 24 horas */
+  const awardPower = useCallback(
+    (thps: number, src = "game") =>
+      update((s) => ({
+        boosts: [
+          ...(s.boosts ?? []).filter((b) => b.until > Date.now()),
+          { id: uid(), th: thps, src, until: Date.now() + BOOST_MS },
+        ],
+      })),
+    [update],
+  );
 
   const recordArcade = useCallback(
     (slug: string, score: number, won: boolean) =>
@@ -714,6 +734,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setSplits,
     balance,
     awardPower,
+    boostPower,
+    activeBoosts,
     forgeCraft,
     forgeUpgrade,
     dismantle,
