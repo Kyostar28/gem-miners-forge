@@ -18,23 +18,23 @@ export const Route = createFileRoute("/games/")({
 });
 
 function GamesPage() {
-  const { state } = useGame();
+  const { state, boostPower } = useGame();
   return (
     <AppShell
       title="GAMES"
-      subtitle={`15 arcades con 3 vidas. Complétalos y gana poder de minado. Bonus actual: ${fmt(state?.bonusPower ?? 0)} TH/s.`}
+      subtitle={`15 arcades con 3 vidas. Complétalos y gana poder de minado. Cada victoria da +0.5 TH/s durante 24 h. Boost activo: ${fmt(boostPower, 1)} TH/s.`}
     >
       <div className="cm-games">
         <Link to="/games/memory" className="cm-gamecard">
           <div className="cm-gamecard__art" aria-hidden>🧠</div>
           <b>CRYPTO MEMORY</b>
-          <span>Empareja 6 criptomonedas. 3 vidas. Recompensa +50 TH/s.</span>
+          <span>Empareja 6 criptomonedas. 3 vidas. Recompensa +0.5 TH/s por 24 h.</span>
           <em>Victorias: {state?.games.memoryWins ?? 0}</em>
         </Link>
         <Link to="/games/snake" className="cm-gamecard">
           <div className="cm-gamecard__art" aria-hidden>🐍</div>
           <b>HASH SNAKE</b>
-          <span>Recoge 15 bloques sin chocar. 3 vidas. Recompensa +45 TH/s.</span>
+          <span>Recoge 15 bloques sin chocar. 3 vidas. Recompensa +0.5 TH/s por 24 h.</span>
           <em>Récord: {state?.games.snakeBest ?? 0}</em>
         </Link>
 
@@ -44,7 +44,7 @@ function GamesPage() {
             <Link key={g.slug} to="/games/$slug" params={{ slug: g.slug }} className="cm-gamecard">
               <div className="cm-gamecard__art" aria-hidden>{g.icon}</div>
               <b>{g.name.toUpperCase()}</b>
-              <span>{g.description} Meta {g.target} pts · +{fmt(g.reward)} TH/s.</span>
+              <span>{g.description} Meta {g.target} pts · +{g.reward} TH/s por 24 h.</span>
               <em>Récord: {st?.best ?? 0} · Victorias: {st?.wins ?? 0}</em>
             </Link>
           );

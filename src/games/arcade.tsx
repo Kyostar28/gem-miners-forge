@@ -1,3 +1,4 @@
+import { GAME_BOOST_TH } from "@/lib/game-store";
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import type { ArcadeApi } from "@/components/ArcadeShell";
 
@@ -516,19 +517,19 @@ function ColorMatch({ api }: { api: ArcadeApi }) {
 }
 
 export const ARCADE_GAMES: ArcadeGame[] = [
-  { slug: "bot-whack", name: "Bot Whack", icon: "⛏", target: 12, reward: 25, description: "Golpea bloques, evita virus.", help: "Haz clic en ⛏ para puntuar. Tocar ☠ cuesta una vida.", Game: BotWhack },
-  { slug: "reflex-hash", name: "Reflex Hash", icon: "⚡", target: 8, reward: 20, description: "Reacciona cuando el nodo se ilumine.", help: "Haz clic solo cuando aparezca ¡HASH!. Adelantarte cuesta una vida.", Game: ReflexHash },
-  { slug: "node-sequence", name: "Node Sequence", icon: "🔊", target: 6, reward: 40, description: "Repite la secuencia de nodos.", help: "Memoriza el patrón y repítelo. Un fallo cuesta una vida.", Game: NodeSequence },
-  { slug: "hash-math", name: "Hash Math", icon: "🧮", target: 10, reward: 30, description: "Resuelve operaciones rápidas.", help: "Elige el resultado correcto. Fallar cuesta una vida.", Game: HashMath },
-  { slug: "coin-catcher", name: "Coin Catcher", icon: "🪙", target: 12, reward: 35, description: "Atrapa las monedas que caen.", help: "Mueve el colector con el ratón o las flechas. Moneda perdida = vida.", Game: CoinCatcher },
-  { slug: "block-dodge", name: "Block Dodge", icon: "🛡", target: 15, reward: 35, description: "Esquiva los bloques corruptos.", help: "Muévete con el ratón o las flechas. Choque = vida.", Game: BlockDodge },
-  { slug: "hex-typer", name: "Hex Typer", icon: "⌨", target: 8, reward: 30, description: "Teclea los hashes al vuelo.", help: "Escribe el hash mostrado y pulsa enter. Error = vida.", Game: HexTyper },
-  { slug: "odd-one-out", name: "Odd One Out", icon: "🔍", target: 10, reward: 25, description: "Encuentra la cripto distinta.", help: "Haz clic en el icono diferente. Fallar cuesta una vida.", Game: OddOneOut },
-  { slug: "coin-flash", name: "Coin Flash", icon: "✦", target: 10, reward: 30, description: "Recuerda la moneda que parpadeó.", help: "Mira la moneda y elige cuál era. Fallar cuesta una vida.", Game: CoinFlash },
-  { slug: "precision-stop", name: "Precision Stop", icon: "🎯", target: 8, reward: 35, description: "Detén la barra en la zona verde.", help: "Pulsa STOP dentro de la zona verde. Fuera = vida.", Game: PrecisionStop },
-  { slug: "crypto-trivia", name: "Crypto Trivia", icon: "❓", target: 8, reward: 40, description: "Preguntas rápidas sobre cripto.", help: "Acierta 8 preguntas. Cada fallo cuesta una vida.", Game: CryptoTrivia },
-  { slug: "target-hunter", name: "Target Hunter", icon: "◎", target: 12, reward: 30, description: "Caza el nodo que se mueve.", help: "Haz clic en el objetivo. Clic fuera = vida.", Game: TargetHunter },
-  { slug: "color-match", name: "Color Match", icon: "🎨", target: 10, reward: 25, description: "Asocia la moneda con su color.", help: "Elige el color correcto de la moneda. Fallar cuesta una vida.", Game: ColorMatch },
+  { slug: "bot-whack", name: "Bot Whack", icon: "⛏", target: 12, reward: GAME_BOOST_TH, description: "Golpea bloques, evita virus.", help: "Haz clic en ⛏ para puntuar. Tocar ☠ cuesta una vida.", Game: BotWhack },
+  { slug: "reflex-hash", name: "Reflex Hash", icon: "⚡", target: 8, reward: GAME_BOOST_TH, description: "Reacciona cuando el nodo se ilumine.", help: "Haz clic solo cuando aparezca ¡HASH!. Adelantarte cuesta una vida.", Game: ReflexHash },
+  { slug: "node-sequence", name: "Node Sequence", icon: "🔊", target: 6, reward: GAME_BOOST_TH, description: "Repite la secuencia de nodos.", help: "Memoriza el patrón y repítelo. Un fallo cuesta una vida.", Game: NodeSequence },
+  { slug: "hash-math", name: "Hash Math", icon: "🧮", target: 10, reward: GAME_BOOST_TH, description: "Resuelve operaciones rápidas.", help: "Elige el resultado correcto. Fallar cuesta una vida.", Game: HashMath },
+  { slug: "coin-catcher", name: "Coin Catcher", icon: "🪙", target: 12, reward: GAME_BOOST_TH, description: "Atrapa las monedas que caen.", help: "Mueve el colector con el ratón o las flechas. Moneda perdida = vida.", Game: CoinCatcher },
+  { slug: "block-dodge", name: "Block Dodge", icon: "🛡", target: 15, reward: GAME_BOOST_TH, description: "Esquiva los bloques corruptos.", help: "Muévete con el ratón o las flechas. Choque = vida.", Game: BlockDodge },
+  { slug: "hex-typer", name: "Hex Typer", icon: "⌨", target: 8, reward: GAME_BOOST_TH, description: "Teclea los hashes al vuelo.", help: "Escribe el hash mostrado y pulsa enter. Error = vida.", Game: HexTyper },
+  { slug: "odd-one-out", name: "Odd One Out", icon: "🔍", target: 10, reward: GAME_BOOST_TH, description: "Encuentra la cripto distinta.", help: "Haz clic en el icono diferente. Fallar cuesta una vida.", Game: OddOneOut },
+  { slug: "coin-flash", name: "Coin Flash", icon: "✦", target: 10, reward: GAME_BOOST_TH, description: "Recuerda la moneda que parpadeó.", help: "Mira la moneda y elige cuál era. Fallar cuesta una vida.", Game: CoinFlash },
+  { slug: "precision-stop", name: "Precision Stop", icon: "🎯", target: 8, reward: GAME_BOOST_TH, description: "Detén la barra en la zona verde.", help: "Pulsa STOP dentro de la zona verde. Fuera = vida.", Game: PrecisionStop },
+  { slug: "crypto-trivia", name: "Crypto Trivia", icon: "❓", target: 8, reward: GAME_BOOST_TH, description: "Preguntas rápidas sobre cripto.", help: "Acierta 8 preguntas. Cada fallo cuesta una vida.", Game: CryptoTrivia },
+  { slug: "target-hunter", name: "Target Hunter", icon: "◎", target: 12, reward: GAME_BOOST_TH, description: "Caza el nodo que se mueve.", help: "Haz clic en el objetivo. Clic fuera = vida.", Game: TargetHunter },
+  { slug: "color-match", name: "Color Match", icon: "🎨", target: 10, reward: GAME_BOOST_TH, description: "Asocia la moneda con su color.", help: "Elige el color correcto de la moneda. Fallar cuesta una vida.", Game: ColorMatch },
 ];
 
 export const ARCADE_MAP = Object.fromEntries(ARCADE_GAMES.map((g) => [g.slug, g]));

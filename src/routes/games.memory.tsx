@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useGame } from "@/lib/game-store";
+import { useGame, GAME_BOOST_TH } from "@/lib/game-store";
 
 export const Route = createFileRoute("/games/memory")({
   head: () => ({
@@ -27,7 +27,7 @@ const COINS = [
 ];
 
 const FREE_MISSES = 6;
-const REWARD = 50; // TH/s
+const REWARD = GAME_BOOST_TH; // TH/s temporales (24h)
 
 interface Card {
   id: number;
@@ -89,7 +89,7 @@ function MemoryGame() {
 
   useEffect(() => {
     if (done !== "won") return;
-    awardPower(REWARD);
+    awardPower(REWARD, "memory");
     update((s) => ({ games: { ...s.games, memoryWins: s.games.memoryWins + 1 } }));
   }, [done, awardPower, update]);
 
@@ -103,7 +103,7 @@ function MemoryGame() {
             <span key={i} className={i < lives ? "cm-life is-on" : "cm-life"}>♥</span>
           ))}
         </span>
-        <span className="cm-chip cm-chip--ct">PREMIO +{REWARD} TH/s</span>
+        <span className="cm-chip cm-chip--ct">PREMIO +{REWARD} TH/s · 24H</span>
         <button type="button" className="cm-btn" onClick={reset}>REINICIAR</button>
         <Link to="/games" className="cm-btn cm-btn--ghost">MENÚ</Link>
       </div>
@@ -112,7 +112,7 @@ function MemoryGame() {
         <div className={`cm-over cm-over--${done}`}>
           <div className="cm-over__icon" aria-hidden>{done === "won" ? "🏆" : "💀"}</div>
           <h3>{done === "won" ? "¡COMPLETADO!" : "GAME OVER"}</h3>
-          <p>{done === "won" ? `+${REWARD} TH/s añadidos a tu poder de minado.` : "Perdiste tus 3 vidas."}</p>
+          <p>{done === "won" ? `+${REWARD} TH/s temporales durante 24 horas.` : "Perdiste tus 3 vidas."}</p>
           <div className="cm-over__actions">
             <button type="button" className="cm-btn" onClick={reset}>EMPEZAR DE NUEVO</button>
             <Link to="/games" className="cm-btn cm-btn--ghost">VOLVER AL MENÚ</Link>

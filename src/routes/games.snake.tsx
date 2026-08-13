@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useGame } from "@/lib/game-store";
+import { useGame, GAME_BOOST_TH } from "@/lib/game-store";
 
 export const Route = createFileRoute("/games/snake")({
   head: () => ({
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/games/snake")({
 const N = 18;
 const CELL = 18;
 const TARGET = 15;
-const REWARD = 45; // TH/s
+const REWARD = GAME_BOOST_TH; // TH/s temporales (24h)
 
 type P = { x: number; y: number };
 
@@ -133,7 +133,7 @@ function SnakeGame() {
   useEffect(() => {
     if (status !== "over" && status !== "won") return;
     update((s) => ({ games: { ...s.games, snakeBest: Math.max(s.games.snakeBest, score) } }));
-    if (status === "won") awardPower(REWARD);
+    if (status === "won") awardPower(REWARD, "snake");
   }, [status, score, update, awardPower]);
 
   return (
@@ -146,7 +146,7 @@ function SnakeGame() {
           ))}
         </span>
         <span className="cm-chip">RÉCORD {state?.games.snakeBest ?? 0}</span>
-        <span className="cm-chip cm-chip--ct">PREMIO +{REWARD} TH/s</span>
+        <span className="cm-chip cm-chip--ct">PREMIO +{REWARD} TH/s · 24H</span>
         <button type="button" className="cm-btn" onClick={reset}>
           {status === "playing" ? "REINICIAR" : "JUGAR"}
         </button>
@@ -157,7 +157,7 @@ function SnakeGame() {
         <div className={`cm-over cm-over--${status}`}>
           <div className="cm-over__icon" aria-hidden>{status === "won" ? "🏆" : "💀"}</div>
           <h3>{status === "won" ? "¡COMPLETADO!" : "GAME OVER"}</h3>
-          <p>{status === "won" ? `+${REWARD} TH/s añadidos a tu poder de minado.` : `Perdiste tus 3 vidas con ${score} bloques.`}</p>
+          <p>{status === "won" ? `+${REWARD} TH/s temporales durante 24 horas.` : `Perdiste tus 3 vidas con ${score} bloques.`}</p>
           <div className="cm-over__actions">
             <button type="button" className="cm-btn" onClick={reset}>EMPEZAR DE NUEVO</button>
             <Link to="/games" className="cm-btn cm-btn--ghost">VOLVER AL MENÚ</Link>

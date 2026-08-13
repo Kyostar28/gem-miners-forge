@@ -62,7 +62,7 @@ function OfferwallPage() {
             <p>{o.desc}</p>
             <div className="cm-offer__rew">
               <span className="cm-chip cm-chip--ct">+{o.ct} CT</span>
-              {o.th > 0 ? <span className="cm-chip">+{o.th} TH/s</span> : null}
+              {o.th > 0 ? <span className="cm-chip">+{o.th} TH/s · 24h</span> : null}
             </div>
             <button
               type="button"
@@ -70,7 +70,7 @@ function OfferwallPage() {
               disabled={done.includes(o.id)}
               onClick={() => {
                 update((s) => ({ ct: s.ct + o.ct }));
-                if (o.th > 0) awardPower(o.th);
+                if (o.th > 0) awardPower(o.th, "offerwall");
                 setDone((d) => [...d, o.id]);
               }}
             >

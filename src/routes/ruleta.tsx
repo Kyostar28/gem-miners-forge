@@ -63,7 +63,7 @@ function RoulettePage() {
     window.setTimeout(() => {
       const p = PRIZES[idx];
       if (p.ct > 0) update((s) => ({ ct: s.ct + p.ct }));
-      if (p.th > 0) awardPower(p.th);
+      if (p.th > 0) awardPower(p.th, "ruleta");
       setResult(p);
       setSpinning(false);
     }, 4200);
