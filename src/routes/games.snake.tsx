@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useGame } from "@/lib/game-store";
+import { useGame, GAME_BOOST_TH } from "@/lib/game-store";
 
 export const Route = createFileRoute("/games/snake")({
   head: () => ({
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/games/snake")({
 const N = 18;
 const CELL = 18;
 const TARGET = 15;
-const REWARD = 45; // TH/s
+const REWARD = GAME_BOOST_TH; // TH/s temporales (24h)
 
 type P = { x: number; y: number };
 

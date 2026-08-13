@@ -26,6 +26,10 @@ import {
 
 const KEY = "cryptominer:save:v1";
 export const CYCLE_MS = 10 * 60 * 1000; // rewards pool every 10 minutes
+/** los boosts de poder ganados jugando duran 24 horas */
+export const BOOST_MS = 24 * 60 * 60 * 1000;
+/** poder temporal que otorga completar cualquier juego */
+export const GAME_BOOST_TH = 0.5;
 export const POOL_CT = 12_000; // legacy export
 export const POOL_LTC = 6; // legacy export
 export const NETWORK_POWER = 250_000; // total network hash power (TH/s)

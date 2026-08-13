@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useGame } from "@/lib/game-store";
+import { useGame, GAME_BOOST_TH } from "@/lib/game-store";
 
 export const Route = createFileRoute("/games/memory")({
   head: () => ({
@@ -27,7 +27,7 @@ const COINS = [
 ];
 
 const FREE_MISSES = 6;
-const REWARD = 50; // TH/s
+const REWARD = GAME_BOOST_TH; // TH/s temporales (24h)
 
 interface Card {
   id: number;
