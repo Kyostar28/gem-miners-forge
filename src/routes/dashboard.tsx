@@ -36,10 +36,16 @@ function clock(ms: number) {
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 
+function hleft(ms: number) {
+  const h = Math.floor(ms / 3_600_000);
+  const m = Math.floor((ms % 3_600_000) / 60_000);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
 function DashboardPage() {
   const {
     state, power, basePower, ownedMiners, rigs, rooms, mount, unmount,
-    claim, timeLeft, estimates, splitPct, balance,
+    claim, timeLeft, estimates, splitPct, balance, boostPower, activeBoosts, now,
   } = useGame();
   const [split, setSplit] = useState(false);
   const [picked, setPicked] = useState<number | null>(null);
