@@ -98,8 +98,10 @@ export interface SaveState {
   games: { memoryWins: number; snakeBest: number };
   /** arcade results: slug -> { best, wins } */
   arcade: Record<string, { best: number; wins: number }>;
-  /** extra TH/s earned playing games */
+  /** legacy: poder extra permanente (ya no se usa para nuevas recompensas) */
   bonusPower: number;
+  /** boosts temporales de poder ganados en juegos: caducan a las 24h */
+  boosts: { id: string; th: number; src: string; until: number }[];
   achievements: string[];
   withdrawals: Withdrawal[];
 }
