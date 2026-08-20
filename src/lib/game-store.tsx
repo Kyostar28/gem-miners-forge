@@ -560,11 +560,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return out;
   }, [state?.splits]);
 
+  /** +10% de rewards pool por cada rank (liga/división) alcanzado */
+  const poolMult = useMemo(() => leaguePoolMult(power), [power]);
+
+  const bump = useCallback(
+    (metric: QuestMetric, n = 1) =>
+      update((s) => ({ counters: { ...(s.counters ?? {}), [metric]: (s.counters?.[metric] ?? 0) + n } })),
+    [update],
+  );
+
   const estimates = useMemo(() => {
     const out: Record<string, number> = {};
-    for (const c of COINS) out[c.key] = c.pool * share * (splitPct[c.key] / 100);
+    for (const c of COINS) out[c.key] = c.pool * share * (splitPct[c.key] / 100) * poolMult;
     return out;
-  }, [share, splitPct]);
+  }, [share, splitPct, poolMult]);
 
   const estimate = useMemo(() => ({ ct: estimates.CT ?? 0, ltc: estimates.LTC ?? 0 }), [estimates]);
 
