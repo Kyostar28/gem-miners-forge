@@ -596,8 +596,73 @@ export function GameProvider({ children }: { children: ReactNode }) {
       cycleStart: Date.now(),
       claimed: s.claimed + 1,
       shards: { ...s.shards, COMMON: (s.shards?.COMMON ?? 0) + 2 },
+      counters: {
+        ...(s.counters ?? {}),
+        claims: (s.counters?.claims ?? 0) + 1,
+        ctEarned: (s.counters?.ctEarned ?? 0) + (estimates.CT ?? 0),
+        shardsGained: (s.counters?.shardsGained ?? 0) + 2,
+      },
     });
   }, [estimates, update]);
+
+  // ---------- MISIONES ----------
+  /** rota los periodos vencidos (00:00 UTC diario, lunes, día 1) */
+  useEffect(() => {
+    if (!ready || !state) return;
+    const next = rollQuests(state.quests, state.counters ?? {}, state.username);
+    if (next !== state.quests) update({ quests: next });
+  }, [ready, state, now, update]);
+
+  const questReset = useMemo(
+    () => ({ daily: periodEnd("daily", now), weekly: periodEnd("weekly", now), monthly: periodEnd("monthly", now) }),
+    [now],
+  );
+
+  const quests = useMemo(() => {
+    const out = { daily: [], weekly: [], monthly: [] } as Record<QuestScope, QuestView[]>;
+    if (!state) return out;
+    for (const scope of SCOPES) {
+      const period = state.quests?.[scope];
+      if (!period) continue;
+      out[scope] = period.ids
+        .map((id) => QUEST_MAP[id])
+        .filter(Boolean)
+        .map((def) => {
+          const absolute = ABSOLUTE_METRICS.includes(def.metric);
+          const raw = absolute
+            ? def.metric === "power"
+              ? power
+              : 0
+            : (state.counters?.[def.metric] ?? 0) - (period.base?.[def.metric] ?? 0);
+          const progress = Math.max(0, Math.min(def.target, raw));
+          return { def, progress, done: progress >= def.target, claimed: period.claimed.includes(def.id) };
+        });
+    }
+    return out;
+  }, [state, power]);
+
+  const claimQuest = useCallback(
+    (scope: QuestScope, id: string) => {
+      const s = stateRef.current;
+      if (!s) return;
+      const view = quests[scope].find((q) => q.def.id === id);
+      if (!view || !view.done || view.claimed) return;
+      const { def } = view;
+      const period = s.quests[scope];
+      update({
+        ct: s.ct + def.ct,
+        shards: def.shards ? { ...s.shards, COMMON: (s.shards?.COMMON ?? 0) + def.shards } : s.shards,
+        boosts: def.th
+          ? [
+              ...(s.boosts ?? []).filter((b) => b.until > Date.now()),
+              { id: uid(), th: def.th, src: `quest:${def.id}`, until: Date.now() + BOOST_MS },
+            ]
+          : s.boosts,
+        quests: { ...s.quests, [scope]: { ...period, claimed: [...period.claimed, id] } },
+      });
+    },
+    [quests, update],
+  );
 
   const setSplits = useCallback((splits: Record<string, number>) => update({ splits }), [update]);
 
