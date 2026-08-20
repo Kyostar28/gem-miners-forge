@@ -119,7 +119,48 @@ export interface SaveState {
   boosts: { id: string; th: number; src: string; until: number }[];
   achievements: string[];
   withdrawals: Withdrawal[];
+  /** contadores acumulativos usados por las misiones */
+  counters: Record<string, number>;
+  /** estado de misiones por periodo */
+  quests: Record<QuestScope, QuestPeriod>;
 }
+
+export interface QuestPeriod {
+  /** clave del periodo UTC actual */
+  key: string;
+  /** ids de las 7 tareas del periodo */
+  ids: string[];
+  /** snapshot de contadores al iniciar el periodo */
+  base: Record<string, number>;
+  /** ids ya reclamados */
+  claimed: string[];
+}
+
+export interface QuestView {
+  def: QuestDef;
+  progress: number;
+  done: boolean;
+  claimed: boolean;
+}
+
+/** cada rank (liga/división) aumenta el rewards pool un 10% sobre el anterior */
+export const LEAGUE_POOL_STEP = 0.1;
+export function leaguePoolMult(power: number) {
+  return Math.pow(1 + LEAGUE_POOL_STEP, getRank(power).index);
+}
+
+const SCOPES: QuestScope[] = ["daily", "weekly", "monthly"];
+
+const newQuestPeriod = (scope: QuestScope, counters: Record<string, number>, seed = ""): QuestPeriod => {
+  const key = periodKey(scope);
+  return { key, ids: pickQuests(scope, key, seed), base: { ...counters }, claimed: [] };
+};
+
+const initialQuests = (seed = ""): Record<QuestScope, QuestPeriod> => ({
+  daily: newQuestPeriod("daily", {}, seed),
+  weekly: newQuestPeriod("weekly", {}, seed),
+  monthly: newQuestPeriod("monthly", {}, seed),
+});
 
 
 
