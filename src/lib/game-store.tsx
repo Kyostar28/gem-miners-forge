@@ -212,6 +212,8 @@ const initial = (username: string, avatar = "visor"): SaveState => ({
   boosts: [],
   achievements: [],
   withdrawals: [],
+  counters: {},
+  quests: initialQuests(username),
 });
 
 /** fills missing fields on saves created by older versions */
