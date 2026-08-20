@@ -347,6 +347,15 @@ interface Ctx {
   cloudMined: (dep: CloudDeposit, at?: number) => number;
   cloudClaim: (id: string) => void;
   cloudClose: (id: string) => void;
+  /** incrementa un contador de misiones */
+  bump: (metric: QuestMetric, n?: number) => void;
+  /** misiones del periodo actual por scope */
+  quests: Record<QuestScope, QuestView[]>;
+  /** timestamp del próximo reinicio por scope */
+  questReset: Record<QuestScope, number>;
+  claimQuest: (scope: QuestScope, id: string) => void;
+  /** multiplicador de rewards pool según liga/división (+10% por rank) */
+  poolMult: number;
   now: number;
 }
 
