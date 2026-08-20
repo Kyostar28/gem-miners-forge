@@ -22,6 +22,17 @@ import {
   upgradeCost,
   upgradeTarget,
 } from "@/data/forge";
+import { getRank } from "@/lib/leagues";
+import {
+  ABSOLUTE_METRICS,
+  QUEST_MAP,
+  periodEnd,
+  periodKey,
+  pickQuests,
+  type QuestDef,
+  type QuestMetric,
+  type QuestScope,
+} from "@/lib/quests";
 
 
 const KEY = "cryptominer:save:v1";
