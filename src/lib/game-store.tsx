@@ -178,6 +178,13 @@ const emptyCoins = (): Record<string, number> => {
 
 const uid = () => Math.random().toString(16).slice(2, 10);
 
+/** incrementa varios contadores de misiones sobre un estado */
+const cnt = (s: SaveState, deltas: Partial<Record<QuestMetric, number>>): Record<string, number> => {
+  const out = { ...(s.counters ?? {}) };
+  for (const [k, v] of Object.entries(deltas)) out[k] = (out[k] ?? 0) + (v ?? 0);
+  return out;
+};
+
 const newRig = (model: string, room: string): Rig => ({
   id: uid(),
   model,
@@ -463,7 +470,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
         (roomId && count(roomId) < ROOM_CAPACITY ? roomId : null) ??
         s.rooms.find((r) => count(r.id) < ROOM_CAPACITY)?.id;
       if (!target) return false; // every room is full: buy another room
-      update({ ct: s.ct - model.price, rigs: [...s.rigs, newRig(model.key, target)] });
+      update({
+        ct: s.ct - model.price,
+        rigs: [...s.rigs, newRig(model.key, target)],
+        counters: cnt(s, { racksBought: 1, ctSpent: model.price }),
+      });
       return true;
     },
     [update],
@@ -476,6 +487,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       update({
         ct: s.ct - model.price,
         rooms: [...s.rooms, { id: `room-${uid()}`, model: model.key }],
+        counters: cnt(s, { roomsBought: 1, ctSpent: model.price }),
       });
       return true;
     },
@@ -499,7 +511,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         slots[slot] = minerId;
         return { ...r, slots };
       });
-      update({ rigs: rigsNext });
+      update({ rigs: rigsNext, counters: cnt(s, { mounts: 1 }) });
       return true;
     },
     [update],
@@ -526,7 +538,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     (miner: Miner) => {
       const s = stateRef.current;
       if (!s || s.ct < miner.price) return false;
-      update({ ct: s.ct - miner.price, owned: [...s.owned, miner.id] });
+      update({ ct: s.ct - miner.price, owned: [...s.owned, miner.id], counters: cnt(s, { minersBought: 1, ctSpent: miner.price }) });
       return true;
     },
     [update],
@@ -543,7 +555,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const i = s.owned.indexOf(miner.id);
       const owned = [...s.owned];
       owned.splice(i, 1);
-      update({ ct: s.ct + Math.round(miner.price * 0.7), owned });
+      update({ ct: s.ct + Math.round(miner.price * 0.7), owned, counters: cnt(s, { sells: 1, marketTrades: 1 }) });
       return true;
     },
     [update],
@@ -685,6 +697,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           ...(s.boosts ?? []).filter((b) => b.until > Date.now()),
           { id: uid(), th: thps, src, until: Date.now() + BOOST_MS },
         ],
+        counters: cnt(s, { boostsGained: 1 }),
       })),
     [update],
   );
@@ -698,6 +711,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             ...s.arcade,
             [slug]: { best: Math.max(prev.best, score), wins: prev.wins + (won ? 1 : 0) },
           },
+          counters: cnt(s, won ? { arcadeWins: 1, gamesWon: 1 } : {}),
         };
       }),
     [update],
@@ -719,7 +733,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         at: Date.now(),
         status: "PENDING",
       };
-      const patch: Partial<SaveState> = { withdrawals: [entry, ...s.withdrawals].slice(0, 50) };
+      const patch: Partial<SaveState> = {
+        withdrawals: [entry, ...s.withdrawals].slice(0, 50),
+        counters: cnt(s, { withdrawals: 1 }),
+      };
       if (coin === "CT") patch.ct = s.ct - amount;
       else if (coin === "LTC") patch.ltc = s.ltc - amount;
       else patch.coins = { ...s.coins, [coin]: (s.coins[coin] ?? 0) - amount };
@@ -758,7 +775,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         last: Date.now(),
         source,
       };
-      update({ ...patch, cloud: [dep, ...s.cloud] });
+      update({ ...patch, cloud: [dep, ...s.cloud], counters: cnt(s, { cloudDeposits: 1 }) });
       return null;
     },
     [update],
@@ -781,6 +798,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       update({
         ...addBalance(s, dep.coin, mined),
         cloud: s.cloud.map((d) => (d.id === id ? { ...d, last: Date.now() } : d)),
+        counters: cnt(s, { cloudClaims: 1 }),
       });
     },
     [update, cloudMined],
@@ -816,6 +834,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           [rarity]: (s.shards[rarity] ?? 0) - CRAFT_COUNT,
           [next]: (s.shards[next] ?? 0) + 1,
         },
+        counters: cnt(s, { forgeCrafts: 1, ctSpent: def.craftCt }),
       });
       return null;
     },
@@ -845,6 +864,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         ct: s.ct - cost,
         owned,
         shards: { ...s.shards, [rarity]: (s.shards[rarity] ?? 0) - UPGRADE_COUNT },
+        counters: cnt(s, { forgeUpgrades: 1, ctSpent: cost }),
       });
       return null;
     },
@@ -863,7 +883,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const { rarity, amount } = dismantleYield(miner);
       const owned = [...s.owned];
       owned.splice(owned.indexOf(minerId), 1);
-      update({ owned, shards: { ...s.shards, [rarity]: (s.shards[rarity] ?? 0) + amount } });
+      update({
+        owned,
+        shards: { ...s.shards, [rarity]: (s.shards[rarity] ?? 0) + amount },
+        counters: cnt(s, { dismantles: 1, shardsGained: amount }),
+      });
       return null;
     },
     [update],
@@ -906,6 +930,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     cloudMined,
     cloudClaim,
     cloudClose,
+    bump,
+    quests,
+    questReset,
+    claimQuest,
+    poolMult,
     now,
   };
 
