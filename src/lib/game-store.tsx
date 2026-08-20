@@ -278,7 +278,27 @@ function migrate(raw: Partial<SaveState> & { splitCt?: number }): SaveState {
     achievements: raw.achievements ?? [],
 
     withdrawals: raw.withdrawals ?? [],
+    counters: raw.counters ?? {},
+    quests: rollQuests(raw.quests ?? initialQuests(raw.username ?? ""), raw.counters ?? {}, raw.username ?? ""),
   };
+}
+
+/** rota los periodos vencidos generando nuevas tareas aleatorias */
+function rollQuests(
+  q: Record<QuestScope, QuestPeriod>,
+  counters: Record<string, number>,
+  seed: string,
+): Record<QuestScope, QuestPeriod> {
+  const out = { ...q };
+  let changed = false;
+  for (const scope of SCOPES) {
+    const cur = out[scope];
+    if (!cur || cur.key !== periodKey(scope)) {
+      out[scope] = newQuestPeriod(scope, counters, seed);
+      changed = true;
+    }
+  }
+  return changed ? out : q;
 }
 
 interface Ctx {
