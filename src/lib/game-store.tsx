@@ -22,6 +22,17 @@ import {
   upgradeCost,
   upgradeTarget,
 } from "@/data/forge";
+import { getRank } from "@/lib/leagues";
+import {
+  ABSOLUTE_METRICS,
+  QUEST_MAP,
+  periodEnd,
+  periodKey,
+  pickQuests,
+  type QuestDef,
+  type QuestMetric,
+  type QuestScope,
+} from "@/lib/quests";
 
 
 const KEY = "cryptominer:save:v1";
@@ -108,7 +119,48 @@ export interface SaveState {
   boosts: { id: string; th: number; src: string; until: number }[];
   achievements: string[];
   withdrawals: Withdrawal[];
+  /** contadores acumulativos usados por las misiones */
+  counters: Record<string, number>;
+  /** estado de misiones por periodo */
+  quests: Record<QuestScope, QuestPeriod>;
 }
+
+export interface QuestPeriod {
+  /** clave del periodo UTC actual */
+  key: string;
+  /** ids de las 7 tareas del periodo */
+  ids: string[];
+  /** snapshot de contadores al iniciar el periodo */
+  base: Record<string, number>;
+  /** ids ya reclamados */
+  claimed: string[];
+}
+
+export interface QuestView {
+  def: QuestDef;
+  progress: number;
+  done: boolean;
+  claimed: boolean;
+}
+
+/** cada rank (liga/división) aumenta el rewards pool un 10% sobre el anterior */
+export const LEAGUE_POOL_STEP = 0.1;
+export function leaguePoolMult(power: number) {
+  return Math.pow(1 + LEAGUE_POOL_STEP, getRank(power).index);
+}
+
+const SCOPES: QuestScope[] = ["daily", "weekly", "monthly"];
+
+const newQuestPeriod = (scope: QuestScope, counters: Record<string, number>, seed = ""): QuestPeriod => {
+  const key = periodKey(scope);
+  return { key, ids: pickQuests(scope, key, seed), base: { ...counters }, claimed: [] };
+};
+
+const initialQuests = (seed = ""): Record<QuestScope, QuestPeriod> => ({
+  daily: newQuestPeriod("daily", {}, seed),
+  weekly: newQuestPeriod("weekly", {}, seed),
+  monthly: newQuestPeriod("monthly", {}, seed),
+});
 
 
 
@@ -125,6 +177,13 @@ const emptyCoins = (): Record<string, number> => {
 };
 
 const uid = () => Math.random().toString(16).slice(2, 10);
+
+/** incrementa varios contadores de misiones sobre un estado */
+const cnt = (s: SaveState, deltas: Partial<Record<QuestMetric, number>>): Record<string, number> => {
+  const out = { ...(s.counters ?? {}) };
+  for (const [k, v] of Object.entries(deltas)) out[k] = (out[k] ?? 0) + (v ?? 0);
+  return out;
+};
 
 const newRig = (model: string, room: string): Rig => ({
   id: uid(),
@@ -160,6 +219,8 @@ const initial = (username: string, avatar = "visor"): SaveState => ({
   boosts: [],
   achievements: [],
   withdrawals: [],
+  counters: {},
+  quests: initialQuests(username),
 });
 
 /** fills missing fields on saves created by older versions */
@@ -224,7 +285,27 @@ function migrate(raw: Partial<SaveState> & { splitCt?: number }): SaveState {
     achievements: raw.achievements ?? [],
 
     withdrawals: raw.withdrawals ?? [],
+    counters: raw.counters ?? {},
+    quests: rollQuests(raw.quests ?? initialQuests(raw.username ?? ""), raw.counters ?? {}, raw.username ?? ""),
   };
+}
+
+/** rota los periodos vencidos generando nuevas tareas aleatorias */
+function rollQuests(
+  q: Record<QuestScope, QuestPeriod>,
+  counters: Record<string, number>,
+  seed: string,
+): Record<QuestScope, QuestPeriod> {
+  const out = { ...q };
+  let changed = false;
+  for (const scope of SCOPES) {
+    const cur = out[scope];
+    if (!cur || cur.key !== periodKey(scope)) {
+      out[scope] = newQuestPeriod(scope, counters, seed);
+      changed = true;
+    }
+  }
+  return changed ? out : q;
 }
 
 interface Ctx {
@@ -273,6 +354,15 @@ interface Ctx {
   cloudMined: (dep: CloudDeposit, at?: number) => number;
   cloudClaim: (id: string) => void;
   cloudClose: (id: string) => void;
+  /** incrementa un contador de misiones */
+  bump: (metric: QuestMetric, n?: number) => void;
+  /** misiones del periodo actual por scope */
+  quests: Record<QuestScope, QuestView[]>;
+  /** timestamp del próximo reinicio por scope */
+  questReset: Record<QuestScope, number>;
+  claimQuest: (scope: QuestScope, id: string) => void;
+  /** multiplicador de rewards pool según liga/división (+10% por rank) */
+  poolMult: number;
   now: number;
 }
 
@@ -380,7 +470,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
         (roomId && count(roomId) < ROOM_CAPACITY ? roomId : null) ??
         s.rooms.find((r) => count(r.id) < ROOM_CAPACITY)?.id;
       if (!target) return false; // every room is full: buy another room
-      update({ ct: s.ct - model.price, rigs: [...s.rigs, newRig(model.key, target)] });
+      update({
+        ct: s.ct - model.price,
+        rigs: [...s.rigs, newRig(model.key, target)],
+        counters: cnt(s, { racksBought: 1, ctSpent: model.price }),
+      });
       return true;
     },
     [update],
@@ -393,6 +487,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       update({
         ct: s.ct - model.price,
         rooms: [...s.rooms, { id: `room-${uid()}`, model: model.key }],
+        counters: cnt(s, { roomsBought: 1, ctSpent: model.price }),
       });
       return true;
     },
@@ -416,7 +511,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         slots[slot] = minerId;
         return { ...r, slots };
       });
-      update({ rigs: rigsNext });
+      update({ rigs: rigsNext, counters: cnt(s, { mounts: 1 }) });
       return true;
     },
     [update],
@@ -443,7 +538,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     (miner: Miner) => {
       const s = stateRef.current;
       if (!s || s.ct < miner.price) return false;
-      update({ ct: s.ct - miner.price, owned: [...s.owned, miner.id] });
+      update({ ct: s.ct - miner.price, owned: [...s.owned, miner.id], counters: cnt(s, { minersBought: 1, ctSpent: miner.price }) });
       return true;
     },
     [update],
@@ -460,7 +555,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const i = s.owned.indexOf(miner.id);
       const owned = [...s.owned];
       owned.splice(i, 1);
-      update({ ct: s.ct + Math.round(miner.price * 0.7), owned });
+      update({ ct: s.ct + Math.round(miner.price * 0.7), owned, counters: cnt(s, { sells: 1, marketTrades: 1 }) });
       return true;
     },
     [update],
@@ -477,11 +572,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return out;
   }, [state?.splits]);
 
+  /** +10% de rewards pool por cada rank (liga/división) alcanzado */
+  const poolMult = useMemo(() => leaguePoolMult(power), [power]);
+
+  const bump = useCallback(
+    (metric: QuestMetric, n = 1) =>
+      update((s) => ({ counters: { ...(s.counters ?? {}), [metric]: (s.counters?.[metric] ?? 0) + n } })),
+    [update],
+  );
+
   const estimates = useMemo(() => {
     const out: Record<string, number> = {};
-    for (const c of COINS) out[c.key] = c.pool * share * (splitPct[c.key] / 100);
+    for (const c of COINS) out[c.key] = c.pool * share * (splitPct[c.key] / 100) * poolMult;
     return out;
-  }, [share, splitPct]);
+  }, [share, splitPct, poolMult]);
 
   const estimate = useMemo(() => ({ ct: estimates.CT ?? 0, ltc: estimates.LTC ?? 0 }), [estimates]);
 
@@ -504,8 +608,73 @@ export function GameProvider({ children }: { children: ReactNode }) {
       cycleStart: Date.now(),
       claimed: s.claimed + 1,
       shards: { ...s.shards, COMMON: (s.shards?.COMMON ?? 0) + 2 },
+      counters: {
+        ...(s.counters ?? {}),
+        claims: (s.counters?.claims ?? 0) + 1,
+        ctEarned: (s.counters?.ctEarned ?? 0) + (estimates.CT ?? 0),
+        shardsGained: (s.counters?.shardsGained ?? 0) + 2,
+      },
     });
   }, [estimates, update]);
+
+  // ---------- MISIONES ----------
+  /** rota los periodos vencidos (00:00 UTC diario, lunes, día 1) */
+  useEffect(() => {
+    if (!ready || !state) return;
+    const next = rollQuests(state.quests, state.counters ?? {}, state.username);
+    if (next !== state.quests) update({ quests: next });
+  }, [ready, state, now, update]);
+
+  const questReset = useMemo(
+    () => ({ daily: periodEnd("daily", now), weekly: periodEnd("weekly", now), monthly: periodEnd("monthly", now) }),
+    [now],
+  );
+
+  const quests = useMemo(() => {
+    const out = { daily: [], weekly: [], monthly: [] } as Record<QuestScope, QuestView[]>;
+    if (!state) return out;
+    for (const scope of SCOPES) {
+      const period = state.quests?.[scope];
+      if (!period) continue;
+      out[scope] = period.ids
+        .map((id) => QUEST_MAP[id])
+        .filter(Boolean)
+        .map((def) => {
+          const absolute = ABSOLUTE_METRICS.includes(def.metric);
+          const raw = absolute
+            ? def.metric === "power"
+              ? power
+              : 0
+            : (state.counters?.[def.metric] ?? 0) - (period.base?.[def.metric] ?? 0);
+          const progress = Math.max(0, Math.min(def.target, raw));
+          return { def, progress, done: progress >= def.target, claimed: period.claimed.includes(def.id) };
+        });
+    }
+    return out;
+  }, [state, power]);
+
+  const claimQuest = useCallback(
+    (scope: QuestScope, id: string) => {
+      const s = stateRef.current;
+      if (!s) return;
+      const view = quests[scope].find((q) => q.def.id === id);
+      if (!view || !view.done || view.claimed) return;
+      const { def } = view;
+      const period = s.quests[scope];
+      update({
+        ct: s.ct + def.ct,
+        shards: def.shards ? { ...s.shards, COMMON: (s.shards?.COMMON ?? 0) + def.shards } : s.shards,
+        boosts: def.th
+          ? [
+              ...(s.boosts ?? []).filter((b) => b.until > Date.now()),
+              { id: uid(), th: def.th, src: `quest:${def.id}`, until: Date.now() + BOOST_MS },
+            ]
+          : s.boosts,
+        quests: { ...s.quests, [scope]: { ...period, claimed: [...period.claimed, id] } },
+      });
+    },
+    [quests, update],
+  );
 
   const setSplits = useCallback((splits: Record<string, number>) => update({ splits }), [update]);
 
@@ -528,6 +697,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           ...(s.boosts ?? []).filter((b) => b.until > Date.now()),
           { id: uid(), th: thps, src, until: Date.now() + BOOST_MS },
         ],
+        counters: cnt(s, { boostsGained: 1 }),
       })),
     [update],
   );
@@ -541,6 +711,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             ...s.arcade,
             [slug]: { best: Math.max(prev.best, score), wins: prev.wins + (won ? 1 : 0) },
           },
+          counters: cnt(s, won ? { arcadeWins: 1, gamesWon: 1 } : {}),
         };
       }),
     [update],
@@ -562,7 +733,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         at: Date.now(),
         status: "PENDING",
       };
-      const patch: Partial<SaveState> = { withdrawals: [entry, ...s.withdrawals].slice(0, 50) };
+      const patch: Partial<SaveState> = {
+        withdrawals: [entry, ...s.withdrawals].slice(0, 50),
+        counters: cnt(s, { withdrawals: 1 }),
+      };
       if (coin === "CT") patch.ct = s.ct - amount;
       else if (coin === "LTC") patch.ltc = s.ltc - amount;
       else patch.coins = { ...s.coins, [coin]: (s.coins[coin] ?? 0) - amount };
@@ -601,7 +775,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         last: Date.now(),
         source,
       };
-      update({ ...patch, cloud: [dep, ...s.cloud] });
+      update({ ...patch, cloud: [dep, ...s.cloud], counters: cnt(s, { cloudDeposits: 1 }) });
       return null;
     },
     [update],
@@ -624,6 +798,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       update({
         ...addBalance(s, dep.coin, mined),
         cloud: s.cloud.map((d) => (d.id === id ? { ...d, last: Date.now() } : d)),
+        counters: cnt(s, { cloudClaims: 1 }),
       });
     },
     [update, cloudMined],
@@ -659,6 +834,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           [rarity]: (s.shards[rarity] ?? 0) - CRAFT_COUNT,
           [next]: (s.shards[next] ?? 0) + 1,
         },
+        counters: cnt(s, { forgeCrafts: 1, ctSpent: def.craftCt }),
       });
       return null;
     },
@@ -688,6 +864,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         ct: s.ct - cost,
         owned,
         shards: { ...s.shards, [rarity]: (s.shards[rarity] ?? 0) - UPGRADE_COUNT },
+        counters: cnt(s, { forgeUpgrades: 1, ctSpent: cost }),
       });
       return null;
     },
@@ -706,7 +883,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const { rarity, amount } = dismantleYield(miner);
       const owned = [...s.owned];
       owned.splice(owned.indexOf(minerId), 1);
-      update({ owned, shards: { ...s.shards, [rarity]: (s.shards[rarity] ?? 0) + amount } });
+      update({
+        owned,
+        shards: { ...s.shards, [rarity]: (s.shards[rarity] ?? 0) + amount },
+        counters: cnt(s, { dismantles: 1, shardsGained: amount }),
+      });
       return null;
     },
     [update],
@@ -749,6 +930,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     cloudMined,
     cloudClaim,
     cloudClose,
+    bump,
+    quests,
+    questReset,
+    claimQuest,
+    poolMult,
     now,
   };
 
