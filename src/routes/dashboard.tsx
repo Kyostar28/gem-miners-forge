@@ -7,6 +7,13 @@ import { COINS, fmtCoin } from "@/lib/coins";
 import { getRank, rankRequirement, RANK_COUNT } from "@/lib/leagues";
 import { PARTS, BOOSTERS } from "@/data/parts";
 import { ROOM_CAPACITY } from "@/data/rooms";
+import { fmtCountdown, type QuestScope } from "@/lib/quests";
+
+const SCOPE_TABS: { key: QuestScope; label: string }[] = [
+  { key: "daily", label: "DIARIAS" },
+  { key: "weekly", label: "SEMANALES" },
+  { key: "monthly", label: "MENSUALES" },
+];
 
 type InvTab = "miners" | "racks" | "parts" | "boosters";
 
@@ -45,12 +52,14 @@ function hleft(ms: number) {
 function DashboardPage() {
   const {
     state, power, basePower, ownedMiners, rigs, rooms, mount, unmount,
-    claim, timeLeft, estimates, splitPct, balance, boostPower, activeBoosts, now,
+    claim, timeLeft, estimates, splitPct, boostPower, activeBoosts, now,
+    quests, questReset, claimQuest,
   } = useGame();
   const [split, setSplit] = useState(false);
   const [picked, setPicked] = useState<number | null>(null);
   const [tab, setTab] = useState<InvTab>("miners");
   const [room, setRoom] = useState(0);
+  const [scope, setScope] = useState<QuestScope>("daily");
   if (!state) return <AppShell title="DASHBOARD">{null}</AppShell>;
 
   const rank = getRank(power);
