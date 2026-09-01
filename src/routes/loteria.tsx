@@ -31,7 +31,7 @@ function pick6() {
 }
 
 function LotteryPage() {
-  const { state, update } = useGame();
+  const { state, update, bump } = useGame();
   const [ticket, setTicket] = useState<number[] | null>(null);
   const [draw, setDraw] = useState<number[] | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -46,6 +46,7 @@ function LotteryPage() {
       return;
     }
     update((s) => ({ ct: s.ct - TICKET }));
+    bump("lottery");
     setTicket(pick6());
     setDraw(null);
     setMsg(null);

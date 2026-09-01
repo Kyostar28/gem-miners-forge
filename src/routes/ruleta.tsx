@@ -42,7 +42,7 @@ const PRIZES: Prize[] = [
 const SPIN_COST = 100;
 
 function RoulettePage() {
-  const { state, update, awardPower } = useGame();
+  const { state, update, awardPower, bump } = useGame();
   const [angle, setAngle] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<Prize | null>(null);
@@ -59,6 +59,7 @@ function RoulettePage() {
     setSpinning(true);
     setResult(null);
     update((s) => ({ ct: s.ct - SPIN_COST }));
+    bump("spins");
     setAngle((a) => a + target);
     window.setTimeout(() => {
       const p = PRIZES[idx];

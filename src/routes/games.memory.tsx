@@ -46,7 +46,7 @@ function shuffle(): Card[] {
 }
 
 function MemoryGame() {
-  const { update, awardPower } = useGame();
+  const { update, awardPower, bump } = useGame();
   const [deck, setDeck] = useState<Card[]>([]);
   const [flipped, setFlipped] = useState<number[]>([]);
   const [matched, setMatched] = useState<string[]>([]);
@@ -91,7 +91,8 @@ function MemoryGame() {
     if (done !== "won") return;
     awardPower(REWARD, "memory");
     update((s) => ({ games: { ...s.games, memoryWins: s.games.memoryWins + 1 } }));
-  }, [done, awardPower, update]);
+    bump("gamesWon");
+  }, [done, awardPower, update, bump]);
 
   return (
     <AppShell title="CRYPTO MEMORY" subtitle="Empareja las 6 criptos. Tras 6 fallos, cada error cuesta una vida.">
