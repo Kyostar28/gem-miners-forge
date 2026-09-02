@@ -133,11 +133,13 @@ function SnakeGame() {
   useEffect(() => {
     if (status !== "over" && status !== "won") return;
     update((s) => ({ games: { ...s.games, snakeBest: Math.max(s.games.snakeBest, score) } }));
-    if (status === "won") {
-      awardPower(REWARD, "snake");
-      bump("gamesWon");
-    }
-  }, [status, score, update, awardPower, bump]);
+  }, [status, score, update]);
+
+  const claimReward = useCallback(() => {
+    awardPower(REWARD, "snake");
+    bump("gamesWon");
+  }, [awardPower, bump]);
+
 
   return (
     <AppShell title="HASH SNAKE" subtitle={`Recoge ${TARGET} bloques de hash con 3 vidas. Flechas o WASD.`}>
