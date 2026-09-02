@@ -1122,3 +1122,46 @@ body, button, input, select, textarea { font-family: var(--cm-mono); }
 .cm-forge__actions { display: flex; flex-direction: column; gap: .4rem; }
 .cm-forge__actions .cm-btn { padding: .4rem .7rem; font-size: 10px; }
 .cm-note--warn { color: #ff7b7b; border-color: #ff7b7b; }
+
+/* ===== BALANCE DROPDOWN (topbar) ===== */
+.cm-baldrop { position: relative; }
+.cm-baldrop__btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: transparent; border: 0; cursor: pointer;
+  color: var(--cm-text); font-family: inherit; font-size: 11px; padding: 0;
+}
+.cm-baldrop__btn.is-open { filter: brightness(1.25); }
+.cm-baldrop__pop {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 40;
+  min-width: 220px; padding: 8px;
+  background: var(--cm-panel); border: 1px solid var(--cm-line);
+  border-radius: 10px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  max-height: 320px; overflow: auto;
+}
+.cm-baldrop__head {
+  font-size: 10px; letter-spacing: 0.14em; opacity: 0.6;
+  padding: 4px 6px 8px; border-bottom: 1px solid var(--cm-line); margin-bottom: 6px;
+}
+.cm-baldrop__row {
+  display: grid; grid-template-columns: 18px 46px 1fr; align-items: center;
+  gap: 8px; padding: 5px 6px; border-radius: 6px; font-size: 11px;
+}
+.cm-baldrop__row:hover { background: var(--cm-panel-2, rgba(255, 255, 255, 0.04)); }
+.cm-baldrop__ic { color: var(--coin); }
+.cm-baldrop__sym { opacity: 0.75; letter-spacing: 0.08em; }
+.cm-baldrop__val { text-align: right; color: var(--coin); font-weight: 700; }
+
+/* ===== QUESTS ===== */
+.cm-questbox { display: flex; flex-direction: column; gap: 10px; }
+.cm-quests { display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow: auto; padding-right: 4px; }
+.cm-quest {
+  border: 1px solid var(--cm-line); border-radius: 8px; padding: 8px 10px;
+  background: var(--cm-panel-2, rgba(255, 255, 255, 0.03)); display: flex; flex-direction: column; gap: 6px;
+}
+.cm-quest.is-done { border-color: var(--cm-accent); box-shadow: 0 0 0 1px var(--cm-accent) inset; }
+.cm-quest.is-claimed { opacity: 0.5; }
+.cm-quest__top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.cm-quest__top b { font-size: 11px; line-height: 1.3; }
+.cm-quest__reward { font-size: 10px; color: var(--cm-accent); white-space: nowrap; }
+.cm-quest__foot { display: flex; justify-content: space-between; align-items: center; font-size: 10px; opacity: 0.85; }
+.cm-btn--xs { padding: 3px 8px; font-size: 9.5px; letter-spacing: 0.1em; }
