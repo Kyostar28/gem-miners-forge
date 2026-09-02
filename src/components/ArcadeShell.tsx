@@ -43,8 +43,8 @@ export function ArcadeShell({ game }: { game: ArcadeGame }) {
     if (status === "idle" || status === "playing" || settled.current) return;
     settled.current = true;
     recordArcade(game.slug, score, status === "won");
-    if (status === "won") awardPower(game.reward, game.slug);
-  }, [status, score, game.slug, game.reward, recordArcade, awardPower]);
+  }, [status, score, game.slug, recordArcade]);
+
 
   const best = state?.arcade[game.slug]?.best ?? 0;
   const Game = game.Game;
