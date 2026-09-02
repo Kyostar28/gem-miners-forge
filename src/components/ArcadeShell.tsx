@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
+import { ClaimReward } from "@/components/ClaimReward";
 import { useGame, fmt } from "@/lib/game-store";
 import type { ArcadeGame } from "@/games/arcade";
 
@@ -43,8 +44,8 @@ export function ArcadeShell({ game }: { game: ArcadeGame }) {
     if (status === "idle" || status === "playing" || settled.current) return;
     settled.current = true;
     recordArcade(game.slug, score, status === "won");
-    if (status === "won") awardPower(game.reward, game.slug);
-  }, [status, score, game.slug, game.reward, recordArcade, awardPower]);
+  }, [status, score, game.slug, recordArcade]);
+
 
   const best = state?.arcade[game.slug]?.best ?? 0;
   const Game = game.Game;
@@ -68,9 +69,16 @@ export function ArcadeShell({ game }: { game: ArcadeGame }) {
           {status === "playing" ? (
             <Game key={run} api={{ score, lives, target: game.target, add, hit, finish }} />
           ) : (
-            <ArcadeOverlay status={status} score={score} game={game} onStart={start} />
+            <ArcadeOverlay
+              status={status}
+              score={score}
+              game={game}
+              onStart={start}
+              onClaim={() => awardPower(game.reward, game.slug)}
+            />
           )}
         </div>
+
         <p className="cm-note">{game.help}</p>
       </div>
     </AppShell>
@@ -82,11 +90,13 @@ function ArcadeOverlay({
   score,
   game,
   onStart,
+  onClaim,
 }: {
   status: "idle" | "over" | "won";
   score: number;
   game: ArcadeGame;
   onStart: () => void;
+  onClaim: () => void;
 }) {
   return (
     <div className={`cm-over cm-over--${status}`}>
@@ -98,9 +108,10 @@ function ArcadeOverlay({
         {status === "idle"
           ? `Llega a ${game.target} puntos con 3 vidas.`
           : status === "won"
-            ? `+${game.reward} TH/s temporales durante 24 horas.`
+            ? `Reclama tu recompensa: +${game.reward} TH/s temporales durante 24 horas.`
             : `Perdiste tus 3 vidas con ${score} puntos.`}
       </p>
+      {status === "won" ? <ClaimReward reward={game.reward} onClaim={onClaim} /> : null}
       <div className="cm-over__actions">
         <button type="button" className="cm-btn" onClick={onStart}>
           {status === "idle" ? "JUGAR" : "EMPEZAR DE NUEVO"}
@@ -110,6 +121,7 @@ function ArcadeOverlay({
     </div>
   );
 }
+
 
 export function Stage({ children }: { children: ReactNode }) {
   return <div className="cm-stagebox">{children}</div>;

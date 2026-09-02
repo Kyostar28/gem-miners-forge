@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { ClaimReward } from "@/components/ClaimReward";
 import { useGame, GAME_BOOST_TH } from "@/lib/game-store";
 
 export const Route = createFileRoute("/games/memory")({
@@ -87,12 +88,12 @@ function MemoryGame() {
     else if (deck.length > 0 && matched.length === COINS.length) setDone("won");
   }, [lives, matched.length, deck.length, done]);
 
-  useEffect(() => {
-    if (done !== "won") return;
+  const claimReward = useCallback(() => {
     awardPower(REWARD, "memory");
     update((s) => ({ games: { ...s.games, memoryWins: s.games.memoryWins + 1 } }));
     bump("gamesWon");
-  }, [done, awardPower, update, bump]);
+  }, [awardPower, update, bump]);
+
 
   return (
     <AppShell title="CRYPTO MEMORY" subtitle="Empareja las 6 criptos. Tras 6 fallos, cada error cuesta una vida.">
@@ -113,12 +114,14 @@ function MemoryGame() {
         <div className={`cm-over cm-over--${done}`}>
           <div className="cm-over__icon" aria-hidden>{done === "won" ? "🏆" : "💀"}</div>
           <h3>{done === "won" ? "¡COMPLETADO!" : "GAME OVER"}</h3>
-          <p>{done === "won" ? `+${REWARD} TH/s temporales durante 24 horas.` : "Perdiste tus 3 vidas."}</p>
+          <p>{done === "won" ? `Reclama tu recompensa: +${REWARD} TH/s temporales durante 24 horas.` : "Perdiste tus 3 vidas."}</p>
+          {done === "won" ? <ClaimReward reward={REWARD} onClaim={claimReward} /> : null}
           <div className="cm-over__actions">
             <button type="button" className="cm-btn" onClick={reset}>EMPEZAR DE NUEVO</button>
             <Link to="/games" className="cm-btn cm-btn--ghost">VOLVER AL MENÚ</Link>
           </div>
         </div>
+
       ) : (
         <div className="cm-memory">
           {deck.map((c, i) => {

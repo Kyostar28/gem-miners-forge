@@ -1086,7 +1086,7 @@ body, button, input, select, textarea { font-family: var(--cm-mono); }
 .cm-invbox--slim { margin: 0; }
 .cm-invbox__body--scroll { max-height: 340px; overflow-y: auto; }
 .cm-roomhead { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
-.cm-roomsbox { grid-column: 1 / -1; display: grid; gap: .9rem; }
+.cm-roomsbox { grid-column: 1 / -1; order: -1; display: grid; gap: .9rem; }
 .cm-roomsbox .cm-tabs { flex-wrap: wrap; }
 .cm-roomcard { --cm-accent: var(--cm-green); }
 .cm-login__box--wide { max-width: 720px; width: 100%; }
@@ -1165,3 +1165,67 @@ body, button, input, select, textarea { font-family: var(--cm-mono); }
 .cm-quest__reward { font-size: 10px; color: var(--cm-accent); white-space: nowrap; }
 .cm-quest__foot { display: flex; justify-content: space-between; align-items: center; font-size: 10px; opacity: 0.85; }
 .cm-btn--xs { padding: 3px 8px; font-size: 9.5px; letter-spacing: 0.1em; }
+
+/* ── CLAIM REWARD · BARRA BLOCKCHAIN 3D ─────────────────────────── */
+.cm-btn--claim {
+  font-weight: 700;
+  letter-spacing: .06em;
+  box-shadow: 0 6px 0 -2px color-mix(in srgb, var(--cm-green) 45%, transparent),
+              0 0 22px color-mix(in srgb, var(--cm-green) 35%, transparent);
+  transform: translateZ(0);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.cm-btn--claim:hover { transform: translateY(-2px); }
+.cm-btn--claim:active { transform: translateY(1px); }
+
+.cm-chain {
+  display: grid;
+  gap: .55rem;
+  width: min(460px, 100%);
+  padding: 1rem 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--cm-green) 35%, transparent);
+  border-radius: 12px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cm-green) 8%, transparent), transparent);
+  perspective: 800px;
+}
+.cm-chain__label { display: flex; justify-content: space-between; font-size: .72rem; letter-spacing: .1em; opacity: .9; }
+.cm-chain__track {
+  height: 18px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--cm-green) 30%, transparent);
+  background: color-mix(in srgb, var(--cm-text) 6%, transparent);
+  overflow: hidden;
+  transform: rotateX(16deg);
+  box-shadow: inset 0 4px 10px rgb(0 0 0 / .45);
+}
+.cm-chain__fill {
+  position: relative;
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--cm-green) 92%, #fff),
+    var(--cm-green) 45%,
+    color-mix(in srgb, var(--cm-green) 55%, #000));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--cm-green) 60%, transparent);
+  transition: width .12s linear;
+}
+.cm-chain__shine {
+  position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgb(255 255 255 / .45) 50%, transparent 80%);
+  animation: cm-chain-shine 1.6s linear infinite;
+}
+@keyframes cm-chain-shine { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+.cm-chain__blocks { display: flex; gap: 4px; }
+.cm-chain__blocks span {
+  flex: 1; height: 8px; border-radius: 3px;
+  background: color-mix(in srgb, var(--cm-text) 10%, transparent);
+  transition: background .25s ease, box-shadow .25s ease, transform .25s ease;
+}
+.cm-chain__blocks span.is-on {
+  background: var(--cm-green);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--cm-green) 70%, transparent);
+  transform: translateY(-1px);
+}
+.cm-chain--ok { text-align: center; animation: scale-in .25s ease-out; }
+.cm-chain__ok { font-weight: 700; letter-spacing: .12em; color: var(--cm-green); }
+.cm-chain__amount { font-size: 1.6rem; font-weight: 800; margin: 0; }

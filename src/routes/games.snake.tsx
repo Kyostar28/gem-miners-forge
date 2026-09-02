@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { ClaimReward } from "@/components/ClaimReward";
 import { useGame, GAME_BOOST_TH } from "@/lib/game-store";
 
 export const Route = createFileRoute("/games/snake")({
@@ -133,11 +134,13 @@ function SnakeGame() {
   useEffect(() => {
     if (status !== "over" && status !== "won") return;
     update((s) => ({ games: { ...s.games, snakeBest: Math.max(s.games.snakeBest, score) } }));
-    if (status === "won") {
-      awardPower(REWARD, "snake");
-      bump("gamesWon");
-    }
-  }, [status, score, update, awardPower, bump]);
+  }, [status, score, update]);
+
+  const claimReward = useCallback(() => {
+    awardPower(REWARD, "snake");
+    bump("gamesWon");
+  }, [awardPower, bump]);
+
 
   return (
     <AppShell title="HASH SNAKE" subtitle={`Recoge ${TARGET} bloques de hash con 3 vidas. Flechas o WASD.`}>
@@ -160,7 +163,8 @@ function SnakeGame() {
         <div className={`cm-over cm-over--${status}`}>
           <div className="cm-over__icon" aria-hidden>{status === "won" ? "🏆" : "💀"}</div>
           <h3>{status === "won" ? "¡COMPLETADO!" : "GAME OVER"}</h3>
-          <p>{status === "won" ? `+${REWARD} TH/s temporales durante 24 horas.` : `Perdiste tus 3 vidas con ${score} bloques.`}</p>
+          <p>{status === "won" ? `Reclama tu recompensa: +${REWARD} TH/s temporales durante 24 horas.` : `Perdiste tus 3 vidas con ${score} bloques.`}</p>
+          {status === "won" ? <ClaimReward reward={REWARD} onClaim={claimReward} /> : null}
           <div className="cm-over__actions">
             <button type="button" className="cm-btn" onClick={reset}>EMPEZAR DE NUEVO</button>
             <Link to="/games" className="cm-btn cm-btn--ghost">VOLVER AL MENÚ</Link>
