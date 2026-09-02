@@ -68,9 +68,16 @@ export function ArcadeShell({ game }: { game: ArcadeGame }) {
           {status === "playing" ? (
             <Game key={run} api={{ score, lives, target: game.target, add, hit, finish }} />
           ) : (
-            <ArcadeOverlay status={status} score={score} game={game} onStart={start} />
+            <ArcadeOverlay
+              status={status}
+              score={score}
+              game={game}
+              onStart={start}
+              onClaim={() => awardPower(game.reward, game.slug)}
+            />
           )}
         </div>
+
         <p className="cm-note">{game.help}</p>
       </div>
     </AppShell>
