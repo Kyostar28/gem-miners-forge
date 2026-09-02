@@ -39,7 +39,7 @@ const ADS: Ad[] = [
 ];
 
 function PtcPage() {
-  const { state, update } = useGame();
+  const { state, update, bump } = useGame();
   const [active, setActive] = useState<Ad | null>(null);
   const [left, setLeft] = useState(0);
   const [done, setDone] = useState<string[]>([]);
@@ -48,6 +48,7 @@ function PtcPage() {
     if (!active) return;
     if (left <= 0) {
       update((s) => ({ ct: s.ct + active.reward }));
+      bump("ptcViews");
       setDone((d) => [...d, active.id]);
       setActive(null);
       return;

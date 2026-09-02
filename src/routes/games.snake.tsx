@@ -25,7 +25,7 @@ const REWARD = GAME_BOOST_TH; // TH/s temporales (24h)
 type P = { x: number; y: number };
 
 function SnakeGame() {
-  const { update, awardPower, state } = useGame();
+  const { update, awardPower, state, bump } = useGame();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const snake = useRef<P[]>([{ x: 8, y: 8 }]);
   const dir = useRef<P>({ x: 1, y: 0 });
@@ -133,8 +133,11 @@ function SnakeGame() {
   useEffect(() => {
     if (status !== "over" && status !== "won") return;
     update((s) => ({ games: { ...s.games, snakeBest: Math.max(s.games.snakeBest, score) } }));
-    if (status === "won") awardPower(REWARD, "snake");
-  }, [status, score, update, awardPower]);
+    if (status === "won") {
+      awardPower(REWARD, "snake");
+      bump("gamesWon");
+    }
+  }, [status, score, update, awardPower, bump]);
 
   return (
     <AppShell title="HASH SNAKE" subtitle={`Recoge ${TARGET} bloques de hash con 3 vidas. Flechas o WASD.`}>

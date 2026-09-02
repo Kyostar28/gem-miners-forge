@@ -29,6 +29,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<"theme" | "lang" | null>(null);
   const [avatarPicker, setAvatarPicker] = useState(false);
+  const [balOpen, setBalOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
   useEffect(() => {
     setOpen(false);
     setPanel(null);
+    setBalOpen(false);
   }, [pathname]);
 
   if (!ready || !state) {
@@ -51,7 +53,6 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
   const rank = getRank(power);
   const avatar = AVATAR_MAP[state.avatar] ?? AVATARS[0];
   const baseAvatar = AVATARS.find((a) => a.key === (state.baseAvatar ?? state.avatar)) ?? AVATARS[0];
-  const topCoins = COINS.filter((c) => balance(c.key) > 0).slice(0, 3);
 
   return (
     <div className="cm-shell cm-app">
@@ -180,14 +181,29 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
           </div>
           <div className="cm-topbar__bal">
             <span className="cm-chip">⚡ {fmt(power)} TH/s</span>
-            <span className="cm-chip cm-chip--ct">{fmt(state.ct, 0)} CT</span>
-            {topCoins
-              .filter((c) => c.key !== "CT")
-              .map((c) => (
-                <span className="cm-chip" key={c.key} style={{ color: c.color, borderColor: c.color }}>
-                  {fmtCoin(c.key, balance(c.key))} {c.symbol}
-                </span>
-              ))}
+            <div className="cm-baldrop">
+              <button
+                type="button"
+                className={`cm-baldrop__btn ${balOpen ? "is-open" : ""}`}
+                onClick={() => setBalOpen((v) => !v)}
+                aria-expanded={balOpen}
+              >
+                <span className="cm-chip cm-chip--ct">{fmt(state.ct, 0)} CT</span>
+                <span aria-hidden>▾</span>
+              </button>
+              {balOpen ? (
+                <div className="cm-baldrop__pop">
+                  <div className="cm-baldrop__head">{t("nav.wallet")}</div>
+                  {COINS.map((c) => (
+                    <div className="cm-baldrop__row" key={c.key} style={{ ["--coin" as string]: c.color }}>
+                      <span className="cm-baldrop__ic">{c.icon}</span>
+                      <span className="cm-baldrop__sym">{c.symbol}</span>
+                      <span className="cm-baldrop__val">{fmtCoin(c.key, balance(c.key))}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           </div>
         </header>
         {children}

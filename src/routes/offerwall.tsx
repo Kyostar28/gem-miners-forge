@@ -42,7 +42,7 @@ const OFFERS: Offer[] = [
 ];
 
 function OfferwallPage() {
-  const { state, update, awardPower } = useGame();
+  const { state, update, awardPower, bump } = useGame();
   const [done, setDone] = useState<string[]>([]);
 
   if (!state) return <AppShell title="OFFERWALL">{null}</AppShell>;
@@ -70,6 +70,7 @@ function OfferwallPage() {
               disabled={done.includes(o.id)}
               onClick={() => {
                 update((s) => ({ ct: s.ct + o.ct }));
+                bump("offers");
                 if (o.th > 0) awardPower(o.th, "offerwall");
                 setDone((d) => [...d, o.id]);
               }}

@@ -7,6 +7,13 @@ import { COINS, fmtCoin } from "@/lib/coins";
 import { getRank, rankRequirement, RANK_COUNT } from "@/lib/leagues";
 import { PARTS, BOOSTERS } from "@/data/parts";
 import { ROOM_CAPACITY } from "@/data/rooms";
+import { fmtCountdown, type QuestScope } from "@/lib/quests";
+
+const SCOPE_TABS: { key: QuestScope; label: string }[] = [
+  { key: "daily", label: "DIARIAS" },
+  { key: "weekly", label: "SEMANALES" },
+  { key: "monthly", label: "MENSUALES" },
+];
 
 type InvTab = "miners" | "racks" | "parts" | "boosters";
 
@@ -45,12 +52,14 @@ function hleft(ms: number) {
 function DashboardPage() {
   const {
     state, power, basePower, ownedMiners, rigs, rooms, mount, unmount,
-    claim, timeLeft, estimates, splitPct, balance, boostPower, activeBoosts, now,
+    claim, timeLeft, estimates, splitPct, boostPower, activeBoosts, now,
+    quests, questReset, claimQuest,
   } = useGame();
   const [split, setSplit] = useState(false);
   const [picked, setPicked] = useState<number | null>(null);
   const [tab, setTab] = useState<InvTab>("miners");
   const [room, setRoom] = useState(0);
+  const [scope, setScope] = useState<QuestScope>("daily");
   if (!state) return <AppShell title="DASHBOARD">{null}</AppShell>;
 
   const rank = getRank(power);
@@ -241,17 +250,52 @@ function DashboardPage() {
           </div>
         </div>
 
-        {/* COLUMN 3 — BALANCES */}
-        <div className="cm-panel cm-panel--sm">
-          <div className="cm-panel__title">BALANCES</div>
-          <div className="cm-walletgrid cm-walletgrid--compact">
-            {COINS.map((c) => (
-              <div className="cm-coinrow" key={c.key} style={{ ["--coin" as string]: c.color }}>
-                <span className="cm-coinrow__icon">{c.icon}</span>
-                <span className="cm-coinrow__sym">{c.symbol}</span>
-                <span className="cm-coinrow__val">{fmtCoin(c.key, balance(c.key))}</span>
-              </div>
+        {/* COLUMN 3 — QUESTS */}
+        <div className="cm-panel cm-panel--sm cm-questbox">
+          <div className="cm-roomhead">
+            <div className="cm-panel__title">MISIONES</div>
+            <span className="cm-chip">RESET {fmtCountdown(questReset[scope] - now)}</span>
+          </div>
+          <nav className="cm-tabs" aria-label="Misiones">
+            {SCOPE_TABS.map((s) => (
+              <button
+                key={s.key}
+                type="button"
+                className={`cm-tab ${scope === s.key ? "is-active" : ""}`}
+                onClick={() => setScope(s.key)}
+              >
+                {s.label} ({quests[s.key].filter((q) => q.done && !q.claimed).length}/7)
+              </button>
             ))}
+          </nav>
+          <div className="cm-quests">
+            {quests[scope].map((q) => {
+              const pct = Math.min(100, (q.progress / q.def.target) * 100);
+              return (
+                <div className={`cm-quest ${q.claimed ? "is-claimed" : q.done ? "is-done" : ""}`} key={q.def.id}>
+                  <div className="cm-quest__top">
+                    <b>{q.def.title}</b>
+                    <span className="cm-quest__reward">
+                      +{q.def.ct} CT{q.def.shards ? ` · ${q.def.shards}◈` : ""}{q.def.th ? ` · +${q.def.th} TH/s` : ""}
+                    </span>
+                  </div>
+                  <div className="cm-progress cm-progress--thin">
+                    <div className="cm-progress__fill" style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="cm-quest__foot">
+                    <span>{fmt(q.progress, q.progress < 10 ? 1 : 0)} / {q.def.target.toLocaleString()}</span>
+                    <button
+                      type="button"
+                      className="cm-btn cm-btn--xs"
+                      disabled={!q.done || q.claimed}
+                      onClick={() => claimQuest(scope, q.def.id)}
+                    >
+                      {q.claimed ? "RECLAMADO" : q.done ? "RECLAMAR" : "EN CURSO"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
           <div className="cm-statgrid">
             <div><span>PODER</span><b>{fmt(power)} TH/s</b></div>
@@ -263,13 +307,10 @@ function DashboardPage() {
             Rigs {fmt(basePower)} TH/s
             {state.bonusPower > 0 ? ` + bonus ${fmt(state.bonusPower)}` : ""}
             {boostPower > 0 ? ` + boost temporal ${fmt(boostPower, 1)} TH/s (24 h)` : ""}
+            {activeBoosts.length > 0
+              ? ` · próximo vence en ${hleft(Math.min(...activeBoosts.map((b) => b.until)) - now)}`
+              : ""}
           </p>
-          {activeBoosts.length > 0 ? (
-            <p className="cm-note cm-note--xs">
-              {activeBoosts.length} boost(s) activos · próximo vence en{" "}
-              {hleft(Math.min(...activeBoosts.map((b) => b.until)) - now)}
-            </p>
-          ) : null}
         </div>
 
         {/* ROOMS — full width inside the operations grid */}
