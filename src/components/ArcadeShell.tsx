@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
+import { ClaimReward } from "@/components/ClaimReward";
 import { useGame, fmt } from "@/lib/game-store";
 import type { ArcadeGame } from "@/games/arcade";
 
