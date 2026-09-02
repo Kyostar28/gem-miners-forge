@@ -87,12 +87,12 @@ function MemoryGame() {
     else if (deck.length > 0 && matched.length === COINS.length) setDone("won");
   }, [lives, matched.length, deck.length, done]);
 
-  useEffect(() => {
-    if (done !== "won") return;
+  const claimReward = useCallback(() => {
     awardPower(REWARD, "memory");
     update((s) => ({ games: { ...s.games, memoryWins: s.games.memoryWins + 1 } }));
     bump("gamesWon");
-  }, [done, awardPower, update, bump]);
+  }, [awardPower, update, bump]);
+
 
   return (
     <AppShell title="CRYPTO MEMORY" subtitle="Empareja las 6 criptos. Tras 6 fallos, cada error cuesta una vida.">
