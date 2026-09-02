@@ -1193,7 +1193,7 @@ body, button, input, select, textarea { font-family: var(--cm-mono); }
   height: 18px;
   border-radius: 10px;
   border: 1px solid color-mix(in srgb, var(--cm-green) 30%, transparent);
-  background: color-mix(in srgb, var(--cm-fg) 6%, transparent);
+  background: color-mix(in srgb, var(--cm-text) 6%, transparent);
   overflow: hidden;
   transform: rotateX(16deg);
   box-shadow: inset 0 4px 10px rgb(0 0 0 / .45);
@@ -1218,7 +1218,7 @@ body, button, input, select, textarea { font-family: var(--cm-mono); }
 .cm-chain__blocks { display: flex; gap: 4px; }
 .cm-chain__blocks span {
   flex: 1; height: 8px; border-radius: 3px;
-  background: color-mix(in srgb, var(--cm-fg) 10%, transparent);
+  background: color-mix(in srgb, var(--cm-text) 10%, transparent);
   transition: background .25s ease, box-shadow .25s ease, transform .25s ease;
 }
 .cm-chain__blocks span.is-on {
