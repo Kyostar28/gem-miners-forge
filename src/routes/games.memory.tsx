@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { ClaimReward } from "@/components/ClaimReward";
 import { useGame, GAME_BOOST_TH } from "@/lib/game-store";
 
 export const Route = createFileRoute("/games/memory")({
