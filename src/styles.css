@@ -1086,7 +1086,7 @@ body, button, input, select, textarea { font-family: var(--cm-mono); }
 .cm-invbox--slim { margin: 0; }
 .cm-invbox__body--scroll { max-height: 340px; overflow-y: auto; }
 .cm-roomhead { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
-.cm-roomsbox { grid-column: 1 / -1; display: grid; gap: .9rem; }
+.cm-roomsbox { grid-column: 1 / -1; order: -1; display: grid; gap: .9rem; }
 .cm-roomsbox .cm-tabs { flex-wrap: wrap; }
 .cm-roomcard { --cm-accent: var(--cm-green); }
 .cm-login__box--wide { max-width: 720px; width: 100%; }
