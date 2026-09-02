@@ -113,12 +113,14 @@ function MemoryGame() {
         <div className={`cm-over cm-over--${done}`}>
           <div className="cm-over__icon" aria-hidden>{done === "won" ? "🏆" : "💀"}</div>
           <h3>{done === "won" ? "¡COMPLETADO!" : "GAME OVER"}</h3>
-          <p>{done === "won" ? `+${REWARD} TH/s temporales durante 24 horas.` : "Perdiste tus 3 vidas."}</p>
+          <p>{done === "won" ? `Reclama tu recompensa: +${REWARD} TH/s temporales durante 24 horas.` : "Perdiste tus 3 vidas."}</p>
+          {done === "won" ? <ClaimReward reward={REWARD} onClaim={claimReward} /> : null}
           <div className="cm-over__actions">
             <button type="button" className="cm-btn" onClick={reset}>EMPEZAR DE NUEVO</button>
             <Link to="/games" className="cm-btn cm-btn--ghost">VOLVER AL MENÚ</Link>
           </div>
         </div>
+
       ) : (
         <div className="cm-memory">
           {deck.map((c, i) => {
