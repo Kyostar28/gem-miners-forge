@@ -89,11 +89,13 @@ function ArcadeOverlay({
   score,
   game,
   onStart,
+  onClaim,
 }: {
   status: "idle" | "over" | "won";
   score: number;
   game: ArcadeGame;
   onStart: () => void;
+  onClaim: () => void;
 }) {
   return (
     <div className={`cm-over cm-over--${status}`}>
@@ -105,9 +107,10 @@ function ArcadeOverlay({
         {status === "idle"
           ? `Llega a ${game.target} puntos con 3 vidas.`
           : status === "won"
-            ? `+${game.reward} TH/s temporales durante 24 horas.`
+            ? `Reclama tu recompensa: +${game.reward} TH/s temporales durante 24 horas.`
             : `Perdiste tus 3 vidas con ${score} puntos.`}
       </p>
+      {status === "won" ? <ClaimReward reward={game.reward} onClaim={onClaim} /> : null}
       <div className="cm-over__actions">
         <button type="button" className="cm-btn" onClick={onStart}>
           {status === "idle" ? "JUGAR" : "EMPEZAR DE NUEVO"}
@@ -117,6 +120,7 @@ function ArcadeOverlay({
     </div>
   );
 }
+
 
 export function Stage({ children }: { children: ReactNode }) {
   return <div className="cm-stagebox">{children}</div>;
