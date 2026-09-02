@@ -162,7 +162,8 @@ function SnakeGame() {
         <div className={`cm-over cm-over--${status}`}>
           <div className="cm-over__icon" aria-hidden>{status === "won" ? "🏆" : "💀"}</div>
           <h3>{status === "won" ? "¡COMPLETADO!" : "GAME OVER"}</h3>
-          <p>{status === "won" ? `+${REWARD} TH/s temporales durante 24 horas.` : `Perdiste tus 3 vidas con ${score} bloques.`}</p>
+          <p>{status === "won" ? `Reclama tu recompensa: +${REWARD} TH/s temporales durante 24 horas.` : `Perdiste tus 3 vidas con ${score} bloques.`}</p>
+          {status === "won" ? <ClaimReward reward={REWARD} onClaim={claimReward} /> : null}
           <div className="cm-over__actions">
             <button type="button" className="cm-btn" onClick={reset}>EMPEZAR DE NUEVO</button>
             <Link to="/games" className="cm-btn cm-btn--ghost">VOLVER AL MENÚ</Link>
