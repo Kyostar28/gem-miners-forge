@@ -4,6 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import { ClaimReward } from "@/components/ClaimReward";
 import { useGame, fmt } from "@/lib/game-store";
 import type { ArcadeGame } from "@/games/arcade";
+import type { Drop } from "@/lib/drops";
 
 export interface ArcadeApi {
   score: number;
@@ -96,7 +97,7 @@ function ArcadeOverlay({
   score: number;
   game: ArcadeGame;
   onStart: () => void;
-  onClaim: () => ReturnType<typeof rollDropType>;
+  onClaim: () => Drop;
 }) {
   return (
     <div className={`cm-over cm-over--${status}`}>
