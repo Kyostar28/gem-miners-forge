@@ -47,7 +47,7 @@ function shuffle(): Card[] {
 }
 
 function MemoryGame() {
-  const { update, awardPower, bump } = useGame();
+  const { update, claimGameReward, bump } = useGame();
   const [deck, setDeck] = useState<Card[]>([]);
   const [flipped, setFlipped] = useState<number[]>([]);
   const [matched, setMatched] = useState<string[]>([]);
@@ -89,10 +89,11 @@ function MemoryGame() {
   }, [lives, matched.length, deck.length, done]);
 
   const claimReward = useCallback(() => {
-    awardPower(REWARD, "memory");
+    const drop = claimGameReward(REWARD, "memory");
     update((s) => ({ games: { ...s.games, memoryWins: s.games.memoryWins + 1 } }));
     bump("gamesWon");
-  }, [awardPower, update, bump]);
+    return drop;
+  }, [claimGameReward, update, bump]);
 
 
   return (

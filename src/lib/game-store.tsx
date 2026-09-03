@@ -23,6 +23,7 @@ import {
   upgradeTarget,
 } from "@/data/forge";
 import { getRank } from "@/lib/leagues";
+import { rollDrop, type Drop } from "@/lib/drops";
 import {
   ABSOLUTE_METRICS,
   QUEST_MAP,
@@ -104,6 +105,8 @@ export interface SaveState {
   boosters: Record<string, number>;
   /** forge shards owned: rarity -> count */
   shards: Record<string, number>;
+  /** experiencia de evento ganada en drops */
+  exp: number;
   /** cloud mining contracts */
   cloud: CloudDeposit[];
   /** split weights per coin key (relative, normalized on use) */
@@ -208,6 +211,7 @@ const initial = (username: string, avatar = "visor"): SaveState => ({
   parts: {},
   boosters: {},
   shards: { COMMON: 10 },
+  exp: 0,
   cloud: [],
 
   splits: defaultSplits(),
@@ -274,6 +278,7 @@ function migrate(raw: Partial<SaveState> & { splitCt?: number }): SaveState {
     parts: raw.parts ?? {},
     boosters: raw.boosters ?? {},
     shards: raw.shards ?? { COMMON: 10 },
+    exp: raw.exp ?? 0,
     cloud: raw.cloud ?? [],
 
     coins: { ...base.coins, ...(raw.coins ?? {}) },
@@ -349,6 +354,8 @@ interface Ctx {
   /** desguaza un minero del inventario y devuelve piezas */
   dismantle: (minerId: number) => string | null;
   recordArcade: (slug: string, score: number, won: boolean) => void;
+  /** reclama la recompensa de un juego: poder temporal + tirada de drop */
+  claimGameReward: (thps: number, src?: string) => Drop;
   withdraw: (coin: string, amount: number, address: string) => string | null;
   cloudDeposit: (coin: string, amount: number, source: "balance" | "external") => string | null;
   cloudMined: (dep: CloudDeposit, at?: number) => number;
@@ -717,6 +724,36 @@ export function GameProvider({ children }: { children: ReactNode }) {
     [update],
   );
 
+  /** aplica un drop aleatorio al ganar un juego y devuelve el resultado */
+  const claimGameReward = useCallback(
+    (thps: number, src = "game"): Drop => {
+      const drop = rollDrop();
+      update((s) => {
+        const patch: Partial<SaveState> = {
+          boosts: [
+            ...(s.boosts ?? []).filter((b) => b.until > Date.now()),
+            { id: uid(), th: thps, src, until: Date.now() + BOOST_MS },
+          ],
+          counters: cnt(s, { boostsGained: 1 }),
+        };
+        if (drop.kind === "ct") patch.ct = s.ct + drop.amount;
+        if (drop.kind === "exp") patch.exp = (s.exp ?? 0) + drop.amount;
+        if (drop.kind === "shard") {
+          patch.shards = { ...s.shards, [drop.rarity]: (s.shards?.[drop.rarity] ?? 0) + drop.amount };
+          patch.counters = cnt(s, { boostsGained: 1, shardsGained: drop.amount });
+        }
+        if (drop.kind === "coin") {
+          if (drop.coin === "CT") patch.ct = s.ct + drop.amount;
+          else if (drop.coin === "LTC") patch.ltc = s.ltc + drop.amount;
+          else patch.coins = { ...s.coins, [drop.coin]: (s.coins?.[drop.coin] ?? 0) + drop.amount };
+        }
+        return patch;
+      });
+      return drop;
+    },
+    [update],
+  );
+
   const withdraw = useCallback(
     (coin: string, amount: number, address: string): string | null => {
       const s = stateRef.current;
@@ -925,6 +962,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     forgeUpgrade,
     dismantle,
     recordArcade,
+    claimGameReward,
     withdraw,
     cloudDeposit,
     cloudMined,

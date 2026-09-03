@@ -4,6 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import { ClaimReward } from "@/components/ClaimReward";
 import { useGame, fmt } from "@/lib/game-store";
 import type { ArcadeGame } from "@/games/arcade";
+import type { Drop } from "@/lib/drops";
 
 export interface ArcadeApi {
   score: number;
@@ -15,7 +16,7 @@ export interface ArcadeApi {
 }
 
 export function ArcadeShell({ game }: { game: ArcadeGame }) {
-  const { awardPower, recordArcade, state } = useGame();
+  const { claimGameReward, recordArcade, state } = useGame();
   const [status, setStatus] = useState<"idle" | "playing" | "over" | "won">("idle");
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
@@ -74,7 +75,7 @@ export function ArcadeShell({ game }: { game: ArcadeGame }) {
               score={score}
               game={game}
               onStart={start}
-              onClaim={() => awardPower(game.reward, game.slug)}
+              onClaim={() => claimGameReward(game.reward, game.slug)}
             />
           )}
         </div>
@@ -96,7 +97,7 @@ function ArcadeOverlay({
   score: number;
   game: ArcadeGame;
   onStart: () => void;
-  onClaim: () => void;
+  onClaim: () => Drop;
 }) {
   return (
     <div className={`cm-over cm-over--${status}`}>

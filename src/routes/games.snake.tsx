@@ -26,7 +26,7 @@ const REWARD = GAME_BOOST_TH; // TH/s temporales (24h)
 type P = { x: number; y: number };
 
 function SnakeGame() {
-  const { update, awardPower, state, bump } = useGame();
+  const { update, claimGameReward, state, bump } = useGame();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const snake = useRef<P[]>([{ x: 8, y: 8 }]);
   const dir = useRef<P>({ x: 1, y: 0 });
@@ -137,9 +137,10 @@ function SnakeGame() {
   }, [status, score, update]);
 
   const claimReward = useCallback(() => {
-    awardPower(REWARD, "snake");
+    const drop = claimGameReward(REWARD, "snake");
     bump("gamesWon");
-  }, [awardPower, bump]);
+    return drop;
+  }, [claimGameReward, bump]);
 
 
   return (
