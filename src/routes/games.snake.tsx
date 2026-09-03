@@ -139,6 +139,7 @@ function SnakeGame() {
   const claimReward = useCallback(() => {
     const drop = claimGameReward(REWARD, "snake");
     bump("gamesWon");
+    return drop;
   }, [claimGameReward, bump]);
 
 

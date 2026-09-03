@@ -92,6 +92,7 @@ function MemoryGame() {
     const drop = claimGameReward(REWARD, "memory");
     update((s) => ({ games: { ...s.games, memoryWins: s.games.memoryWins + 1 } }));
     bump("gamesWon");
+    return drop;
   }, [claimGameReward, update, bump]);
 
 
