@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { GameProvider } from "../lib/game-store";
 import { UiProvider } from "../lib/ui-prefs";
+import { ToastProvider } from "../lib/toast";
+import { NodeField } from "../components/NodeField";
 
 
 function NotFoundComponent() {
@@ -137,8 +139,11 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <UiProvider>
         <GameProvider>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
+          <ToastProvider>
+            <NodeField />
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+          </ToastProvider>
         </GameProvider>
       </UiProvider>
     </QueryClientProvider>
