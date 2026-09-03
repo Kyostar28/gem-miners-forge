@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { describeDrop, type Drop } from "@/lib/drops";
 
 const DURATION = 10000;
 const STEPS = [
@@ -19,11 +20,12 @@ export function ClaimReward({
   label = "CLAIM REWARD",
 }: {
   reward: number;
-  onClaim: () => void;
+  onClaim: () => Drop | void;
   label?: string;
 }) {
   const [phase, setPhase] = useState<"idle" | "mining" | "done">("idle");
   const [pct, setPct] = useState(0);
+  const [drop, setDrop] = useState<Drop | null>(null);
   const fired = useRef(false);
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export function ClaimReward({
       else {
         if (!fired.current) {
           fired.current = true;
-          onClaim();
+          setDrop(onClaim() ?? { kind: "none" });
         }
         setPhase("done");
       }
@@ -82,6 +84,20 @@ export function ClaimReward({
       <div className="cm-chain__ok">✔ RECOMPENSA CONFIRMADA</div>
       <p className="cm-chain__amount">+{reward} TH/s</p>
       <p className="cm-note cm-note--xs">Poder de minado temporal activo durante 24 horas.</p>
+      {drop ? <DropCard drop={drop} /> : null}
+    </div>
+  );
+}
+
+function DropCard({ drop }: { drop: Drop }) {
+  const v = describeDrop(drop);
+  return (
+    <div className={`cm-drop ${drop.kind === "none" ? "is-empty" : ""}`} style={{ ["--drop" as string]: v.color }}>
+      <span className="cm-drop__icon" aria-hidden>{v.icon}</span>
+      <div className="cm-drop__body">
+        <b>{drop.kind === "none" ? "SIN BOTÍN" : `BOTÍN · ${v.title}`}</b>
+        <small>{v.detail}</small>
+      </div>
     </div>
   );
 }
