@@ -85,7 +85,8 @@ function ShopPage() {
           </p>
           <div className="cm-rackshop">
             {RACKS.map((r) => (
-              <article className={`cm-rackcard tier-${r.tier.toLowerCase()}`} key={r.key}>
+              <article className={`cm-rackcard cm-rackcard--rarity tier-${r.tier.toLowerCase()}`} key={r.key}>
+                <span className="cm-rackcard__ribbon" aria-hidden>{r.tier}</span>
                 <div className="cm-rackcard__icon" aria-hidden>{r.icon}</div>
                 <div className="cm-rackcard__body">
                   <header>
@@ -97,6 +98,9 @@ function ShopPage() {
                     <span>SLOTS <b>{r.slots}</b></span>
                     <span>BOOST <b>x{r.boost}</b></span>
                     <span>TUYOS <b>{owned(r.key)}</b></span>
+                  </div>
+                  <div className="cm-rackcard__meter" aria-hidden>
+                    <span style={{ width: `${Math.min(100, ((r.boost - 1) / 0.6) * 100)}%` }} />
                   </div>
                 </div>
                 <button
@@ -116,7 +120,8 @@ function ShopPage() {
           {ROOMS.map((rm) => {
             const mine = rooms.filter((r) => r.model.key === rm.key).length;
             return (
-              <article className="cm-rackcard cm-roomcard" key={rm.key}>
+              <article className="cm-rackcard cm-rackcard--rarity cm-roomcard tier-quantum" key={rm.key}>
+                <span className="cm-rackcard__ribbon" aria-hidden>SALA</span>
                 <div className="cm-rackcard__icon" aria-hidden>{rm.icon}</div>
                 <div className="cm-rackcard__body">
                   <header>
