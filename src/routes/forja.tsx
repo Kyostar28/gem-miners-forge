@@ -14,6 +14,7 @@ import {
   rarityForTier,
   upgradeCost,
   upgradeTarget,
+  type Rarity,
 } from "@/data/forge";
 
 export const Route = createFileRoute("/forja")({
@@ -196,7 +197,7 @@ function ForgePage() {
 }
 
 type Pending =
-  | { kind: "craft"; rarity: string }
+  | { kind: "craft"; rarity: Rarity }
   | { kind: "upgrade"; minerId: number }
   | { kind: "dismantle"; minerId: number };
 
