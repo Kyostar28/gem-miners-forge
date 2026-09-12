@@ -1229,3 +1229,164 @@ body, button, input, select, textarea { font-family: var(--cm-mono); }
 .cm-chain--ok { text-align: center; animation: scale-in .25s ease-out; }
 .cm-chain__ok { font-weight: 700; letter-spacing: .12em; color: var(--cm-green); }
 .cm-chain__amount { font-size: 1.6rem; font-weight: 800; margin: 0; }
+
+/* ===== fondo de nodos blockchain ===== */
+html, body { background: var(--cm-bg); }
+.cm-nodefield {
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none;
+  opacity: .9;
+}
+.cm-shell {
+  position: relative;
+  z-index: 1;
+  background:
+    radial-gradient(1200px 700px at 15% -10%, color-mix(in oklab, var(--cm-green) 8%, transparent), transparent 60%),
+    radial-gradient(900px 600px at 100% 100%, color-mix(in oklab, var(--cm-green) 5%, transparent), transparent 60%);
+}
+html[data-theme="white"] .cm-nodefield { opacity: .55; }
+
+/* ===== avisos superiores derecha ===== */
+.cm-toasts {
+  position: fixed; top: 14px; right: 14px; z-index: 200;
+  display: flex; flex-direction: column; gap: 8px;
+  width: min(330px, calc(100vw - 28px));
+  pointer-events: none;
+}
+.cm-toast {
+  pointer-events: auto;
+  display: grid; grid-template-columns: 30px 1fr 18px; align-items: center; gap: 8px;
+  padding: 10px 10px 10px 8px;
+  border: 1px solid color-mix(in oklab, var(--toast, var(--cm-green)) 55%, transparent);
+  border-left: 3px solid var(--toast, var(--cm-green));
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--cm-panel) 92%, var(--toast, var(--cm-green)));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .45), 0 0 24px color-mix(in oklab, var(--toast, var(--cm-green)) 22%, transparent);
+  animation: cm-toastin .28s ease-out both;
+}
+.cm-toast.is-warn { --toast: #ff6b6b; }
+.cm-toast__icon { font-size: 20px; text-align: center; color: var(--toast, var(--cm-green)); filter: drop-shadow(0 0 8px var(--toast, var(--cm-green))); }
+.cm-toast__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cm-toast__body b { font-size: 11px; letter-spacing: .1em; color: var(--cm-text); }
+.cm-toast__body small { font-size: 10px; opacity: .75; }
+.cm-toast__x { background: none; border: 0; color: var(--cm-mute); cursor: pointer; font-size: 11px; }
+@keyframes cm-toastin { from { opacity: 0; transform: translateX(24px) scale(.96); } to { opacity: 1; transform: none; } }
+
+/* ===== tarjetas de rack por rareza ===== */
+.cm-rackcard--rarity {
+  position: relative;
+  overflow: hidden;
+  grid-template-columns: 58px 1fr;
+  padding: 14px 14px 12px;
+  border: 1px solid color-mix(in oklab, var(--cm-accent, var(--cm-green)) 55%, transparent);
+  border-radius: 14px;
+  background:
+    linear-gradient(160deg, color-mix(in oklab, var(--cm-accent, var(--cm-green)) 14%, transparent), transparent 55%),
+    linear-gradient(0deg, color-mix(in oklab, var(--cm-accent-2, var(--cm-green)) 12%, transparent), transparent 60%),
+    var(--cm-panel);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--cm-accent, var(--cm-green)) 18%, transparent),
+    0 0 26px color-mix(in oklab, var(--cm-accent, var(--cm-green)) 16%, transparent);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.cm-rackcard--rarity::before {
+  content: "";
+  position: absolute; inset: -1px;
+  border-radius: 14px;
+  padding: 1px;
+  background: linear-gradient(120deg,
+    color-mix(in oklab, var(--cm-accent, var(--cm-green)) 90%, transparent),
+    transparent 35%, transparent 65%,
+    color-mix(in oklab, var(--cm-accent-2, var(--cm-green)) 90%, transparent));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.cm-rackcard--rarity::after {
+  content: "";
+  position: absolute; left: -40%; top: 0; bottom: 0; width: 35%;
+  background: linear-gradient(100deg, transparent, color-mix(in oklab, var(--cm-accent, var(--cm-green)) 20%, transparent), transparent);
+  transform: skewX(-18deg);
+  transition: left .5s ease;
+  pointer-events: none;
+}
+.cm-rackcard--rarity:hover { transform: translateY(-3px); border-color: var(--cm-accent, var(--cm-green)); box-shadow: 0 12px 34px color-mix(in oklab, var(--cm-accent, var(--cm-green)) 26%, transparent); }
+.cm-rackcard--rarity:hover::after { left: 120%; }
+.cm-rackcard__ribbon {
+  position: absolute; top: 10px; right: -1px;
+  font-size: 8px; letter-spacing: .18em;
+  padding: 3px 10px 3px 12px;
+  color: #05100a;
+  background: linear-gradient(90deg, var(--cm-accent-2, var(--cm-green)), var(--cm-accent, var(--cm-green)));
+  border-radius: 99px 0 0 99px;
+  box-shadow: 0 0 14px color-mix(in oklab, var(--cm-accent, var(--cm-green)) 45%, transparent);
+}
+.cm-rackcard--rarity .cm-rackcard__icon {
+  color: var(--cm-accent, var(--cm-green));
+  font-size: 30px;
+  display: grid; place-items: center;
+  width: 52px; height: 52px;
+  border: 1px solid color-mix(in oklab, var(--cm-accent, var(--cm-green)) 45%, transparent);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--cm-accent, var(--cm-green)) 10%, transparent);
+  filter: drop-shadow(0 0 10px color-mix(in oklab, var(--cm-accent, var(--cm-green)) 55%, transparent));
+  animation: cm-float 5s ease-in-out infinite;
+}
+.cm-rackcard--rarity .cm-rackcard__tier { color: var(--cm-accent, var(--cm-green)); }
+.cm-rackcard--rarity .cm-rackcard__stats b { color: var(--cm-accent, var(--cm-green)); }
+.cm-rackcard__meter { height: 4px; border-radius: 99px; margin-top: 8px; background: color-mix(in oklab, var(--cm-accent, var(--cm-green)) 14%, transparent); overflow: hidden; }
+.cm-rackcard__meter span { display: block; height: 100%; background: linear-gradient(90deg, var(--cm-accent-2, var(--cm-green)), var(--cm-accent, var(--cm-green))); box-shadow: 0 0 10px var(--cm-accent, var(--cm-green)); }
+.cm-rackcard--rarity .cm-btn { margin-top: 10px; }
+html[data-theme="white"] .cm-rackcard__ribbon { color: #fff; }
+
+/* ===== ficha del minero ===== */
+.cm-minermodal { width: min(560px, 96vw); border-color: color-mix(in oklab, var(--cm-accent, var(--cm-green)) 55%, transparent); }
+.cm-minermodal__top { display: grid; grid-template-columns: 150px 1fr; gap: 14px; align-items: start; }
+.cm-minermodal__art {
+  display: grid; place-items: center;
+  border: 1px solid color-mix(in oklab, var(--cm-accent, var(--cm-green)) 45%, transparent);
+  border-radius: 12px; padding: 10px;
+  background: radial-gradient(circle at 50% 40%, color-mix(in oklab, var(--cm-accent, var(--cm-green)) 16%, transparent), transparent 70%);
+}
+.cm-minermodal__art img { width: 100%; max-width: 120px; image-rendering: pixelated; animation: cm-float 4s ease-in-out infinite; }
+.cm-minermodal__specs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.cm-minermodal__specs > div { border: 1px solid var(--cm-border); border-radius: 8px; padding: 6px 8px; background: var(--cm-panel-2); }
+.cm-minermodal__specs span { display: block; font-size: 8px; letter-spacing: .16em; opacity: .65; }
+.cm-minermodal__specs b { font-size: 12px; color: var(--cm-accent, var(--cm-green)); }
+.cm-minermodal__desc { margin-top: 10px; }
+.cm-btn--danger { border-color: #ff6b6b; color: #ff6b6b; background: color-mix(in oklab, #ff6b6b 14%, transparent); }
+.cm-btn--danger:hover { background: color-mix(in oklab, #ff6b6b 26%, transparent); }
+
+/* ===== vista previa de forja ===== */
+.cm-preview { width: min(560px, 96vw); }
+.cm-preview__flow { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
+.cm-preview__cell { display: grid; justify-items: center; gap: 6px; padding: 12px; border: 1px solid var(--cm-border); border-radius: 12px; background: var(--cm-panel-2); }
+.cm-preview__cell img { width: 82px; height: 82px; object-fit: contain; image-rendering: pixelated; animation: cm-float 4s ease-in-out infinite; }
+.cm-preview__cell b { font-size: 11px; letter-spacing: .08em; text-align: center; }
+.cm-preview__cell small { font-size: 9px; letter-spacing: .14em; opacity: .6; }
+.cm-preview__arrow { font-size: 22px; color: var(--cm-green); filter: drop-shadow(0 0 8px var(--cm-green)); }
+
+/* ===== botín de juegos ===== */
+.cm-drop {
+  display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: center;
+  margin-top: 10px; padding: 10px;
+  border: 1px solid color-mix(in oklab, var(--drop, var(--cm-green)) 55%, transparent);
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--cm-panel) 90%, var(--drop, var(--cm-green)));
+}
+.cm-drop.is-empty { opacity: .7; }
+.cm-drop__icon { font-size: 22px; text-align: center; color: var(--drop, var(--cm-green)); filter: drop-shadow(0 0 10px var(--drop, var(--cm-green))); }
+.cm-drop__body { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.cm-drop__body b { font-size: 11px; letter-spacing: .1em; }
+.cm-drop__body small { font-size: 10px; opacity: .75; }
+
+/* recursos del inventario */
+.cm-invcard--shard img { width: 44px; height: 44px; object-fit: contain; animation: cm-float 4s ease-in-out infinite; }
+
+@media (max-width: 640px) {
+  .cm-minermodal__top { grid-template-columns: 1fr; }
+  .cm-preview__flow { grid-template-columns: 1fr; justify-items: stretch; }
+  .cm-preview__arrow { transform: rotate(90deg); justify-self: center; }
+}
