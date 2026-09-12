@@ -5,7 +5,9 @@ import { SplitModal } from "@/components/SplitModal";
 import { useGame, fmt, CYCLE_MS, NETWORK_POWER } from "@/lib/game-store";
 import { COINS, fmtCoin } from "@/lib/coins";
 import { getRank, rankRequirement, RANK_COUNT } from "@/lib/leagues";
-import { PARTS, BOOSTERS } from "@/data/parts";
+import { BOOSTERS } from "@/data/parts";
+import { RARITIES, SHARD_IMAGE } from "@/data/forge";
+import { MinerModal } from "@/components/MinerModal";
 import { ROOM_CAPACITY } from "@/data/rooms";
 import { fmtCountdown, type QuestScope } from "@/lib/quests";
 
@@ -17,10 +19,12 @@ const SCOPE_TABS: { key: QuestScope; label: string }[] = [
 
 type InvTab = "miners" | "racks" | "parts" | "boosters";
 
+interface SlotSel { rigId: string; slot: number; }
+
 const INV_TABS: { key: InvTab; label: string }[] = [
   { key: "miners", label: "MINEROS" },
   { key: "racks", label: "RACKS" },
-  { key: "parts", label: "COMPONENTES" },
+  { key: "parts", label: "RECURSOS" },
   { key: "boosters", label: "BOOSTERS" },
 ];
 
@@ -60,6 +64,7 @@ function DashboardPage() {
   const [tab, setTab] = useState<InvTab>("miners");
   const [room, setRoom] = useState(0);
   const [scope, setScope] = useState<QuestScope>("daily");
+  const [sel, setSel] = useState<SlotSel | null>(null);
   if (!state) return <AppShell title="DASHBOARD">{null}</AppShell>;
 
   const rank = getRank(power);
@@ -67,7 +72,7 @@ function DashboardPage() {
   const ready = timeLeft <= 0;
   const active = COINS.filter((c) => splitPct[c.key] > 0);
   const invCount = ownedMiners.reduce((s, o) => s + o.count, 0);
-  const partCount = Object.values(state.parts ?? {}).reduce((s, n) => s + n, 0);
+  const partCount = Object.values(state.shards ?? {}).reduce((s, n) => s + n, 0);
   const boostCount = Object.values(state.boosters ?? {}).reduce((s, n) => s + n, 0);
 
   const roomIdx = Math.min(room, Math.max(0, rooms.length - 1));
@@ -76,7 +81,7 @@ function DashboardPage() {
 
   const onSlot = (rigId: string, slot: number, filled: boolean) => {
     if (filled) {
-      unmount(rigId, slot);
+      setSel({ rigId, slot });
       return;
     }
     if (picked != null) {
@@ -155,7 +160,7 @@ function DashboardPage() {
               <p className="cm-note cm-note--xs">
                 {picked != null
                   ? "Selecciona un slot libre de un rack para instalar la unidad."
-                  : "Selecciona una unidad para desplegarla. Pulsa una unidad montada para devolverla al inventario."}
+                  : "Selecciona una unidad para desplegarla. Pulsa una unidad montada para abrir su ficha completa."}
               </p>
             </div>
             <span className="cm-chip">{invCount + rigs.length + partCount + boostCount} UNIDADES</span>
@@ -216,15 +221,24 @@ function DashboardPage() {
 
             {tab === "parts" ? (
               partCount === 0 ? (
-                <p className="cm-note">Sin componentes en stock. Los recambios mejoran la eficiencia de tus racks.</p>
+                <p className="cm-note">Sin recursos en stock. Consigue piezas jugando, desguazando o reclamando el pool.</p>
               ) : (
                 <div className="cm-inv">
-                  {PARTS.filter((p) => (state.parts[p.key] ?? 0) > 0).map((p) => (
-                    <div className="cm-invcard cm-invcard--static" key={p.key}>
-                      <span className="cm-invcard__glyph">{p.icon}</span>
-                      <b>{p.name}</b>
-                      <span>+{p.bonusPct}% hash</span>
-                      <em className="cm-invcard__x">x{state.parts[p.key]}</em>
+                  {RARITIES.filter((r) => (state.shards?.[r.key] ?? 0) > 0).map((r, i) => (
+                    <div
+                      className="cm-invcard cm-invcard--static cm-invcard--shard"
+                      key={r.key}
+                      style={{ ["--cm-accent" as string]: r.color }}
+                    >
+                      <img
+                        src={SHARD_IMAGE}
+                        alt={`Pieza ${r.name}`}
+                        loading="lazy"
+                        style={{ filter: `hue-rotate(${RARITIES.findIndex((x) => x.key === r.key) * 62}deg) saturate(1.2) drop-shadow(0 0 8px ${r.color})` }}
+                      />
+                      <b style={{ color: r.color }}>PIEZA {r.name.toUpperCase()}</b>
+                      <span>Forja · {r.tier}</span>
+                      <em className="cm-invcard__x">x{state.shards[r.key]}</em>
                     </div>
                   ))}
                 </div>
@@ -356,14 +370,14 @@ function DashboardPage() {
                         type="button"
                         className={`cm-slot ${m ? `tier-${m.tier.toLowerCase()} is-on` : ""} ${!m && picked != null ? "is-target" : ""}`}
                         key={si}
-                        title={m ? `${m.name} — quitar` : "Slot vacío"}
+                        title={m ? `${m.name} — ver ficha` : "Slot vacío"}
                         onClick={() => onSlot(rig.id, si, !!m)}
                       >
                         {m ? (
                           <>
                             <img src={m.image} alt={m.name} loading="lazy" />
                             <span className="cm-slot__led" aria-hidden />
-                            <span className="cm-slot__remove" aria-hidden>✕</span>
+                            <span className="cm-slot__remove" aria-hidden>i</span>
                           </>
                         ) : (
                           <span className="cm-slot__empty">EMPTY</span>
@@ -377,6 +391,25 @@ function DashboardPage() {
           )}
         </div>
       </section>
+
+      {sel ? (() => {
+        const entry = rigs.find((r) => r.rig.id === sel.rigId);
+        const miner = entry?.miners[sel.slot];
+        if (!entry || !miner) return null;
+        return (
+          <MinerModal
+            miner={miner}
+            rackName={entry.model.name}
+            slot={sel.slot}
+            boost={entry.model.boost}
+            onClose={() => setSel(null)}
+            onUninstall={() => {
+              unmount(sel.rigId, sel.slot);
+              setSel(null);
+            }}
+          />
+        );
+      })() : null}
 
       {split ? <SplitModal onClose={() => setSplit(false)} /> : null}
 
