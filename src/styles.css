@@ -1390,3 +1390,49 @@ html[data-theme="white"] .cm-rackcard__ribbon { color: #fff; }
   .cm-preview__flow { grid-template-columns: 1fr; justify-items: stretch; }
   .cm-preview__arrow { transform: rotate(90deg); justify-self: center; }
 }
+
+/* ---------- EVENTOS ACTIVOS ---------- */
+.cm-eventbox { grid-column: 1 / -1; order: 0; display: grid; gap: .9rem; }
+.cm-evstats {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem;
+}
+.cm-evstats > div {
+  display: grid; gap: 2px; padding: .5rem .6rem;
+  border: 1px solid var(--cm-border); border-radius: 8px;
+  background: color-mix(in srgb, var(--cm-panel-2) 70%, transparent);
+}
+.cm-evstats span { font-size: .58rem; letter-spacing: .1em; color: var(--cm-mute); }
+.cm-evstats b { font-size: .8rem; color: var(--cm-green); }
+
+.cm-evtrack {
+  display: flex; gap: .55rem; overflow-x: auto; padding-bottom: .4rem;
+  scroll-snap-type: x proximity;
+}
+.cm-evnode {
+  --cm-accent: var(--cm-green);
+  flex: 0 0 148px; scroll-snap-align: start;
+  display: grid; gap: 5px; padding: .6rem .55rem; text-align: center;
+  border: 1px solid color-mix(in srgb, var(--cm-accent) 35%, var(--cm-border));
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cm-accent) 10%, transparent), transparent 70%),
+    var(--cm-panel-2);
+  opacity: .72; transition: opacity .2s ease, transform .2s ease, box-shadow .2s ease;
+}
+.cm-evnode.is-ready {
+  opacity: 1; transform: translateY(-2px);
+  box-shadow: 0 0 0 1px var(--cm-accent), 0 0 18px color-mix(in srgb, var(--cm-accent) 40%, transparent);
+}
+.cm-evnode.is-claimed { opacity: .45; filter: saturate(.5); }
+.cm-evnode__lv { font-size: .52rem; letter-spacing: .14em; color: var(--cm-mute); }
+.cm-evnode__icon { font-size: 1.5rem; line-height: 1; color: var(--cm-accent); }
+.cm-evnode__title {
+  font-size: .62rem; letter-spacing: .04em; color: var(--cm-accent);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cm-evnode__detail { font-size: .52rem; color: var(--cm-mute); min-height: 1.5em; }
+.cm-evnode__exp { font-size: .55rem; color: var(--cm-text); }
+@media (max-width: 640px) {
+  .cm-evstats { grid-template-columns: 1fr; }
+  .cm-evnode { flex-basis: 132px; }
+}
