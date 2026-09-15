@@ -10,6 +10,8 @@ import { RARITIES, SHARD_IMAGE } from "@/data/forge";
 import { MinerModal } from "@/components/MinerModal";
 import { ROOM_CAPACITY } from "@/data/rooms";
 import { fmtCountdown, type QuestScope } from "@/lib/quests";
+import { describeReward, fmtLeft, EVENT_TIERS } from "@/lib/events";
+import { useToast } from "@/lib/toast";
 
 const SCOPE_TABS: { key: QuestScope; label: string }[] = [
   { key: "daily", label: "DIARIAS" },
@@ -58,7 +60,9 @@ function DashboardPage() {
     state, power, basePower, ownedMiners, rigs, rooms, mount, unmount,
     claim, timeLeft, estimates, splitPct, boostPower, activeBoosts, now,
     quests, questReset, claimQuest,
+    event, eventExp, eventClaimed, eventActive, claimEventLevel,
   } = useGame();
+  const { push } = useToast();
   const [split, setSplit] = useState(false);
   const [picked, setPicked] = useState<number | null>(null);
   const [tab, setTab] = useState<InvTab>("miners");
