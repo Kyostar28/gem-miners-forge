@@ -24,6 +24,7 @@ import {
 } from "@/data/forge";
 import { getRank } from "@/lib/leagues";
 import { rollDrop, type Drop } from "@/lib/drops";
+import { eventAt, type EventDef, type EventReward } from "@/lib/events";
 import {
   ABSOLUTE_METRICS,
   QUEST_MAP,
@@ -126,6 +127,17 @@ export interface SaveState {
   counters: Record<string, number>;
   /** estado de misiones por periodo */
   quests: Record<QuestScope, QuestPeriod>;
+  /** progreso en el evento activo */
+  event: EventProgress;
+}
+
+export interface EventProgress {
+  /** clave del evento (EV-n) */
+  key: string;
+  /** exp del usuario cuando empezó el evento */
+  base: number;
+  /** niveles ya reclamados (1..25) */
+  claimed: number[];
 }
 
 export interface QuestPeriod {
@@ -225,6 +237,7 @@ const initial = (username: string, avatar = "visor"): SaveState => ({
   withdrawals: [],
   counters: {},
   quests: initialQuests(username),
+  event: { key: eventAt(Date.now()).key, base: 0, claimed: [] },
 });
 
 /** fills missing fields on saves created by older versions */
@@ -292,7 +305,15 @@ function migrate(raw: Partial<SaveState> & { splitCt?: number }): SaveState {
     withdrawals: raw.withdrawals ?? [],
     counters: raw.counters ?? {},
     quests: rollQuests(raw.quests ?? initialQuests(raw.username ?? ""), raw.counters ?? {}, raw.username ?? ""),
+    event: rollEvent(raw.event, raw.exp ?? 0),
   };
+}
+
+/** reinicia el progreso del evento cuando empieza uno nuevo */
+function rollEvent(ev: EventProgress | undefined, exp: number): EventProgress {
+  const key = eventAt(Date.now()).key;
+  if (ev && ev.key === key) return { ...ev, claimed: ev.claimed ?? [] };
+  return { key, base: exp, claimed: [] };
 }
 
 /** rota los periodos vencidos generando nuevas tareas aleatorias */
