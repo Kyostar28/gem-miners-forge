@@ -24,6 +24,7 @@ import {
 } from "@/data/forge";
 import { getRank } from "@/lib/leagues";
 import { rollDrop, type Drop } from "@/lib/drops";
+import { eventAt, type EventDef, type EventReward } from "@/lib/events";
 import {
   ABSOLUTE_METRICS,
   QUEST_MAP,
@@ -126,6 +127,17 @@ export interface SaveState {
   counters: Record<string, number>;
   /** estado de misiones por periodo */
   quests: Record<QuestScope, QuestPeriod>;
+  /** progreso en el evento activo */
+  event: EventProgress;
+}
+
+export interface EventProgress {
+  /** clave del evento (EV-n) */
+  key: string;
+  /** exp del usuario cuando empezó el evento */
+  base: number;
+  /** niveles ya reclamados (1..25) */
+  claimed: number[];
 }
 
 export interface QuestPeriod {
@@ -225,6 +237,7 @@ const initial = (username: string, avatar = "visor"): SaveState => ({
   withdrawals: [],
   counters: {},
   quests: initialQuests(username),
+  event: { key: eventAt(Date.now()).key, base: 0, claimed: [] },
 });
 
 /** fills missing fields on saves created by older versions */
@@ -292,7 +305,15 @@ function migrate(raw: Partial<SaveState> & { splitCt?: number }): SaveState {
     withdrawals: raw.withdrawals ?? [],
     counters: raw.counters ?? {},
     quests: rollQuests(raw.quests ?? initialQuests(raw.username ?? ""), raw.counters ?? {}, raw.username ?? ""),
+    event: rollEvent(raw.event, raw.exp ?? 0),
   };
+}
+
+/** reinicia el progreso del evento cuando empieza uno nuevo */
+function rollEvent(ev: EventProgress | undefined, exp: number): EventProgress {
+  const key = eventAt(Date.now()).key;
+  if (ev && ev.key === key) return { ...ev, claimed: ev.claimed ?? [] };
+  return { key, base: exp, claimed: [] };
 }
 
 /** rota los periodos vencidos generando nuevas tareas aleatorias */
@@ -370,6 +391,16 @@ interface Ctx {
   claimQuest: (scope: QuestScope, id: string) => void;
   /** multiplicador de rewards pool según liga/división (+10% por rank) */
   poolMult: number;
+  /** evento activo (o el siguiente si estamos en la pausa) */
+  event: EventDef;
+  /** exp acumulada dentro del evento actual */
+  eventExp: number;
+  /** niveles reclamados del evento actual */
+  eventClaimed: number[];
+  /** true si el evento está en curso (false en la pausa de 5 min) */
+  eventActive: boolean;
+  /** reclama la recompensa de un nivel del evento */
+  claimEventLevel: (level: number) => EventReward | null;
   now: number;
 }
 
@@ -930,6 +961,63 @@ export function GameProvider({ children }: { children: ReactNode }) {
     [update],
   );
 
+  // ---------- EVENTOS ----------
+  const event = useMemo(() => eventAt(now), [now]);
+  const eventActive = now < event.end;
+
+  /** rota el progreso cuando arranca un evento nuevo */
+  useEffect(() => {
+    if (!ready || !state) return;
+    if (state.event?.key !== event.key) {
+      update({ event: { key: event.key, base: state.exp ?? 0, claimed: [] } });
+    }
+  }, [ready, state, event.key, update]);
+
+  const eventClaimed = state?.event?.claimed ?? [];
+  const eventExp = Math.max(0, (state?.exp ?? 0) - (state?.event?.base ?? 0));
+
+  const claimEventLevel = useCallback(
+    (level: number): EventReward | null => {
+      const s = stateRef.current;
+      if (!s) return null;
+      const def = eventAt(Date.now());
+      if (Date.now() >= def.end) return null;
+      const lvl = def.levels.find((l) => l.level === level);
+      const prog = s.event ?? { key: def.key, base: s.exp ?? 0, claimed: [] };
+      if (!lvl || prog.key !== def.key) return null;
+      if (prog.claimed.includes(level)) return null;
+      if ((s.exp ?? 0) - prog.base < lvl.exp) return null;
+
+      const r = lvl.reward;
+      const patch: Partial<SaveState> = {
+        event: { ...prog, claimed: [...prog.claimed, level] },
+      };
+      if (r.kind === "ct") patch.ct = s.ct + r.amount;
+      if (r.kind === "shard") {
+        patch.shards = { ...s.shards, [r.rarity]: (s.shards?.[r.rarity] ?? 0) + r.amount };
+        patch.counters = cnt(s, { shardsGained: r.amount });
+      }
+      if (r.kind === "miner") patch.owned = [...s.owned, r.id];
+      if (r.kind === "boost") {
+        const th = Math.max(0.5, basePower + (s.bonusPower ?? 0));
+        patch.boosts = [
+          ...(s.boosts ?? []).filter((b) => b.until > Date.now()),
+          { id: uid(), th, src: `event:${def.key}:${level}`, until: Date.now() + BOOST_MS },
+        ];
+        patch.counters = cnt(s, { boostsGained: 1 });
+      }
+      if (r.kind === "rack") {
+        const count = (id: string) => s.rigs.filter((x) => x.room === id).length;
+        const target = s.rooms.find((rm) => count(rm.id) < ROOM_CAPACITY)?.id;
+        if (target) patch.rigs = [...s.rigs, newRig(r.key, target)];
+        else patch.ct = s.ct + (RACK_MAP[r.key]?.price ?? 0); // salas llenas: se paga en CT
+      }
+      update(patch);
+      return r;
+    },
+    [update, basePower],
+  );
+
   const value: Ctx = {
     ready,
     state,
@@ -973,6 +1061,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     questReset,
     claimQuest,
     poolMult,
+    event,
+    eventExp,
+    eventClaimed,
+    eventActive,
+    claimEventLevel,
     now,
   };
 

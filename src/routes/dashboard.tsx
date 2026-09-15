@@ -10,6 +10,8 @@ import { RARITIES, SHARD_IMAGE } from "@/data/forge";
 import { MinerModal } from "@/components/MinerModal";
 import { ROOM_CAPACITY } from "@/data/rooms";
 import { fmtCountdown, type QuestScope } from "@/lib/quests";
+import { describeReward, fmtLeft, EVENT_TIERS } from "@/lib/events";
+import { useToast } from "@/lib/toast";
 
 const SCOPE_TABS: { key: QuestScope; label: string }[] = [
   { key: "daily", label: "DIARIAS" },
@@ -58,7 +60,9 @@ function DashboardPage() {
     state, power, basePower, ownedMiners, rigs, rooms, mount, unmount,
     claim, timeLeft, estimates, splitPct, boostPower, activeBoosts, now,
     quests, questReset, claimQuest,
+    event, eventExp, eventClaimed, eventActive, claimEventLevel,
   } = useGame();
+  const { push } = useToast();
   const [split, setSplit] = useState(false);
   const [picked, setPicked] = useState<number | null>(null);
   const [tab, setTab] = useState<InvTab>("miners");
@@ -389,6 +393,71 @@ function DashboardPage() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* EVENTOS ACTIVOS */}
+        <div className="cm-panel cm-panel--sm cm-eventbox">
+          <div className="cm-roomhead">
+            <div>
+              <div className="cm-panel__title">EVENTOS ACTIVOS · {event.name}</div>
+              <p className="cm-note cm-note--xs">
+                La barra se llena con la EXP de evento que dropea al completar juegos. {EVENT_TIERS} recompensas por
+                evento: cuanto más avanzas, mejores son.
+              </p>
+            </div>
+            <span className="cm-chip">
+              {eventActive ? `TERMINA EN ${fmtLeft(event.end - now)}` : `NUEVO EVENTO EN ${fmtLeft(event.next - now)}`}
+            </span>
+          </div>
+
+          <div className="cm-evstats">
+            <div><span>EXP DEL EVENTO</span><b>{fmt(eventExp)}</b></div>
+            <div><span>RECLAMADAS</span><b>{eventClaimed.length}/{EVENT_TIERS}</b></div>
+            <div><span>SIGUIENTE NIVEL</span><b>
+              {(() => {
+                const nx = event.levels.find((l) => !eventClaimed.includes(l.level));
+                return nx ? `${fmt(Math.max(0, nx.exp - eventExp))} EXP` : "COMPLETO";
+              })()}
+            </b></div>
+          </div>
+
+          <div className="cm-evtrack">
+            {event.levels.map((l) => {
+              const view = describeReward(l.reward);
+              const claimed = eventClaimed.includes(l.level);
+              const ready2 = eventExp >= l.exp && !claimed && eventActive;
+              const pct = Math.max(0, Math.min(100, (eventExp / l.exp) * 100));
+              return (
+                <div
+                  className={`cm-evnode ${claimed ? "is-claimed" : ready2 ? "is-ready" : ""}`}
+                  key={l.level}
+                  style={{ ["--cm-accent" as string]: view.color }}
+                >
+                  <span className="cm-evnode__lv">NIVEL {l.level}</span>
+                  <span className="cm-evnode__icon" aria-hidden>{view.icon}</span>
+                  <b className="cm-evnode__title">{view.title}</b>
+                  <span className="cm-evnode__detail">{view.detail}</span>
+                  <div className="cm-progress cm-progress--thin">
+                    <div className="cm-progress__fill" style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className="cm-evnode__exp">{fmt(l.exp)} EXP</span>
+                  <button
+                    type="button"
+                    className="cm-btn cm-btn--xs"
+                    disabled={!ready2}
+                    onClick={() => {
+                      const r = claimEventLevel(l.level);
+                      if (!r) return;
+                      const v = describeReward(r);
+                      push({ tone: "ok", icon: v.icon, title: v.title, detail: v.detail, color: v.color });
+                    }}
+                  >
+                    {claimed ? "RECLAMADO" : ready2 ? "RECLAMAR" : "BLOQUEADO"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 
