@@ -391,6 +391,16 @@ interface Ctx {
   claimQuest: (scope: QuestScope, id: string) => void;
   /** multiplicador de rewards pool según liga/división (+10% por rank) */
   poolMult: number;
+  /** evento activo (o el siguiente si estamos en la pausa) */
+  event: EventDef;
+  /** exp acumulada dentro del evento actual */
+  eventExp: number;
+  /** niveles reclamados del evento actual */
+  eventClaimed: number[];
+  /** true si el evento está en curso (false en la pausa de 5 min) */
+  eventActive: boolean;
+  /** reclama la recompensa de un nivel del evento */
+  claimEventLevel: (level: number) => EventReward | null;
   now: number;
 }
 
