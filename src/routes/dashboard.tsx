@@ -331,70 +331,6 @@ function DashboardPage() {
           </p>
         </div>
 
-        {/* ROOMS — full width inside the operations grid */}
-        <div className="cm-panel cm-panel--sm cm-roomsbox">
-          <div className="cm-roomhead">
-            <div>
-              <div className="cm-panel__title">INFRAESTRUCTURA · SALAS DE MINADO</div>
-              <p className="cm-note cm-note--xs">
-                Cada sala admite un máximo de {ROOM_CAPACITY} racks. Compra nuevas salas en la TIENDA para ampliar la operación.
-              </p>
-            </div>
-            <span className="cm-chip">
-              {currentRoom ? `${currentRoom.rigIds.length}/${ROOM_CAPACITY} RACKS · x${currentRoom.model.boost}` : "—"}
-            </span>
-          </div>
-
-          <nav className="cm-tabs" aria-label="Salas">
-            {rooms.map((r, i) => (
-              <button
-                key={r.room.id}
-                type="button"
-                className={`cm-tab ${i === roomIdx ? "is-active" : ""}`}
-                onClick={() => setRoom(i)}
-              >
-                {r.model.icon} {r.model.name.toUpperCase()} ({r.rigIds.length}/{ROOM_CAPACITY})
-              </button>
-            ))}
-          </nav>
-
-          {roomRigs.length === 0 ? (
-            <p className="cm-note">Esta sala está vacía. Instala racks desde la TIENDA.</p>
-          ) : (
-            <div className="cm-racks">
-              {roomRigs.map(({ rig, model, miners, power: rp }, ri) => (
-                <div className="cm-rack" key={rig.id}>
-                  <div className="cm-rack__head">
-                    <span>{model.icon} {model.name.toUpperCase()} · RACK-{String(ri + 1).padStart(2, "0")}</span>
-                    <span>{fmt(rp)} TH/s · x{model.boost}</span>
-                  </div>
-                  <div className="cm-rack__slots">
-                    {miners.map((m, si) => (
-                      <button
-                        type="button"
-                        className={`cm-slot ${m ? `tier-${m.tier.toLowerCase()} is-on` : ""} ${!m && picked != null ? "is-target" : ""}`}
-                        key={si}
-                        title={m ? `${m.name} — ver ficha` : "Slot vacío"}
-                        onClick={() => onSlot(rig.id, si, !!m)}
-                      >
-                        {m ? (
-                          <>
-                            <img src={m.image} alt={m.name} loading="lazy" />
-                            <span className="cm-slot__led" aria-hidden />
-                            <span className="cm-slot__remove" aria-hidden>i</span>
-                          </>
-                        ) : (
-                          <span className="cm-slot__empty">EMPTY</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* EVENTOS ACTIVOS */}
         <div className="cm-panel cm-panel--sm cm-eventbox">
           <div className="cm-roomhead">
@@ -458,6 +394,70 @@ function DashboardPage() {
               );
             })}
           </div>
+        </div>
+
+        {/* ROOMS — full width inside the operations grid */}
+        <div className="cm-panel cm-panel--sm cm-roomsbox">
+          <div className="cm-roomhead">
+            <div>
+              <div className="cm-panel__title">INFRAESTRUCTURA · SALAS DE MINADO</div>
+              <p className="cm-note cm-note--xs">
+                Cada sala admite un máximo de {ROOM_CAPACITY} racks. Compra nuevas salas en la TIENDA para ampliar la operación.
+              </p>
+            </div>
+            <span className="cm-chip">
+              {currentRoom ? `${currentRoom.rigIds.length}/${ROOM_CAPACITY} RACKS · x${currentRoom.model.boost}` : "—"}
+            </span>
+          </div>
+
+          <nav className="cm-tabs" aria-label="Salas">
+            {rooms.map((r, i) => (
+              <button
+                key={r.room.id}
+                type="button"
+                className={`cm-tab ${i === roomIdx ? "is-active" : ""}`}
+                onClick={() => setRoom(i)}
+              >
+                {r.model.icon} {r.model.name.toUpperCase()} ({r.rigIds.length}/{ROOM_CAPACITY})
+              </button>
+            ))}
+          </nav>
+
+          {roomRigs.length === 0 ? (
+            <p className="cm-note">Esta sala está vacía. Instala racks desde la TIENDA.</p>
+          ) : (
+            <div className="cm-racks">
+              {roomRigs.map(({ rig, model, miners, power: rp }, ri) => (
+                <div className="cm-rack" key={rig.id}>
+                  <div className="cm-rack__head">
+                    <span>{model.icon} {model.name.toUpperCase()} · RACK-{String(ri + 1).padStart(2, "0")}</span>
+                    <span>{fmt(rp)} TH/s · x{model.boost}</span>
+                  </div>
+                  <div className="cm-rack__slots">
+                    {miners.map((m, si) => (
+                      <button
+                        type="button"
+                        className={`cm-slot ${m ? `tier-${m.tier.toLowerCase()} is-on` : ""} ${!m && picked != null ? "is-target" : ""}`}
+                        key={si}
+                        title={m ? `${m.name} — ver ficha` : "Slot vacío"}
+                        onClick={() => onSlot(rig.id, si, !!m)}
+                      >
+                        {m ? (
+                          <>
+                            <img src={m.image} alt={m.name} loading="lazy" />
+                            <span className="cm-slot__led" aria-hidden />
+                            <span className="cm-slot__remove" aria-hidden>i</span>
+                          </>
+                        ) : (
+                          <span className="cm-slot__empty">EMPTY</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
