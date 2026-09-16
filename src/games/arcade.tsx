@@ -1,5 +1,5 @@
 import { GAME_BOOST_TH } from "@/lib/game-store";
-import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import type { ArcadeApi } from "@/components/ArcadeShell";
 
 export interface ArcadeGame {
@@ -57,37 +57,6 @@ function BotWhack({ api }: { api: ArcadeApi }) {
   );
 }
 
-/* --------------------------------------------------------------- 2. REACTION */
-function ReflexHash({ api }: { api: ArcadeApi }) {
-  const [go, setGo] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const arm = useCallback(() => {
-    setGo(false);
-    timer.current = setTimeout(() => setGo(true), 800 + rnd(2200));
-  }, []);
-  useEffect(() => {
-    arm();
-    return () => {
-      if (timer.current) clearTimeout(timer.current);
-    };
-  }, [arm]);
-  return (
-    <button
-      type="button"
-      className={`cm-reflex ${go ? "is-go" : ""}`}
-      onClick={() => {
-        if (go) api.add();
-        else {
-          api.hit();
-          if (timer.current) clearTimeout(timer.current);
-        }
-        arm();
-      }}
-    >
-      {go ? "¡HASH! CLIC" : "ESPERA…"}
-    </button>
-  );
-}
 
 /* ------------------------------------------------------------------ 3. SIMON */
 function NodeSequence({ api }: { api: ArcadeApi }) {
@@ -290,14 +259,15 @@ function HexTyper({ api }: { api: ArcadeApi }) {
       className="cm-typer"
       onSubmit={(e) => {
         e.preventDefault();
-        if (val.trim().toLowerCase() === word) api.add();
+        if (val.trim().toLowerCase().replace(/^0x/, "") === word) api.add();
         else api.hit();
         setWord(gen());
         setVal("");
       }}
     >
       <div className="cm-typer__word">0x{word}</div>
-      <input className="cm-input" autoFocus value={val} onChange={(e) => setVal(e.target.value)} aria-label="Escribe el hash" placeholder="escribe el hash…" />
+      <p className="cm-note">Escribe solo los 4 caracteres (sin 0x) y pulsa ENVIAR</p>
+      <input className="cm-input" autoFocus value={val} onChange={(e) => setVal(e.target.value)} aria-label="Escribe el hash" placeholder={`ej: ${word}`} />
       <button type="submit" className="cm-btn">ENVIAR</button>
     </form>
   );
@@ -337,87 +307,55 @@ function OddOneOut({ api }: { api: ArcadeApi }) {
   );
 }
 
-/* ------------------------------------------------------------------ 9. FLASH */
-function CoinFlash({ api }: { api: ArcadeApi }) {
-  const [target, setTarget] = useState(() => rnd(COIN_SET.length));
-  const [show, setShow] = useState(true);
-  const opts = useMemo(() => {
-    const set = new Set<number>([target]);
-    while (set.size < 4) set.add(rnd(COIN_SET.length));
-    return [...set].sort(() => Math.random() - 0.5);
-  }, [target]);
-
-  useEffect(() => {
-    setShow(true);
-    const t = setTimeout(() => setShow(false), 900);
-    return () => clearTimeout(t);
-  }, [target]);
-
-  return (
-    <div className="cm-flashgame">
-      {show ? (
-        <div className="cm-flashgame__coin" style={{ color: COIN_SET[target].color }}>{COIN_SET[target].icon}</div>
-      ) : (
-        <>
-          <p className="cm-note">¿Qué moneda apareció?</p>
-          <div className="cm-quiz__opts">
-            {opts.map((i) => (
-              <button
-                key={i}
-                type="button"
-                className="cm-btn cm-btn--ghost"
-                onClick={() => {
-                  if (i === target) api.add();
-                  else api.hit();
-                  setTarget(rnd(COIN_SET.length));
-                }}
-              >
-                {COIN_SET[i].icon} {COIN_SET[i].sym}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 
 /* ----------------------------------------------------------------- 10. TIMING */
 function PrecisionStop({ api }: { api: ArcadeApi }) {
   const [pos, setPos] = useState(0);
+  const [feedback, setFeedback] = useState<"ok" | "fail" | null>(null);
+  const posRef = useRef(0);
   const dir = useRef(1);
-  const running = useRef(true);
+  const paused = useRef(false);
+
   useEffect(() => {
     const t = setInterval(() => {
-      if (!running.current) return;
-      setPos((p) => {
-        let n = p + dir.current * 3;
-        if (n >= 100) { n = 100; dir.current = -1; }
-        if (n <= 0) { n = 0; dir.current = 1; }
-        return n;
-      });
+      if (paused.current) return;
+      let n = posRef.current + dir.current * 2;
+      if (n >= 100) { n = 100; dir.current = -1; }
+      if (n <= 0) { n = 0; dir.current = 1; }
+      posRef.current = n;
+      setPos(n);
     }, 30);
     return () => clearInterval(t);
   }, []);
+
+  const stop = () => {
+    if (paused.current) return;
+    paused.current = true;
+    const p = posRef.current;
+    const ok = p >= 40 && p <= 60;
+    setFeedback(ok ? "ok" : "fail");
+    if (ok) api.add();
+    else api.hit();
+    setTimeout(() => {
+      setFeedback(null);
+      paused.current = false;
+    }, 450);
+  };
+
   return (
     <div className="cm-timing">
       <div className="cm-timing__track">
         <div className="cm-timing__zone" />
         <div className="cm-timing__cursor" style={{ left: `${pos}%` }} />
       </div>
-      <button
-        type="button"
-        className="cm-btn"
-        onClick={() => {
-          if (pos >= 40 && pos <= 60) api.add();
-          else api.hit();
-        }}
-      >
+      <p className="cm-note">{feedback === "ok" ? "¡EN ZONA! +1" : feedback === "fail" ? "FUERA DE ZONA · -1 VIDA" : "Pulsa STOP dentro de la zona verde"}</p>
+      <button type="button" className="cm-btn" onClick={stop}>
         STOP
       </button>
     </div>
   );
 }
+
 
 /* ----------------------------------------------------------------- 11. TRIVIA */
 const TRIVIA = [
@@ -458,31 +396,6 @@ function CryptoTrivia({ api }: { api: ArcadeApi }) {
   );
 }
 
-/* ---------------------------------------------------------------- 12. SHOOTER */
-function TargetHunter({ api }: { api: ArcadeApi }) {
-  const [p, setP] = useState({ x: 50, y: 50 });
-  useEffect(() => {
-    const t = setInterval(() => setP({ x: 8 + rnd(84), y: 10 + rnd(75) }), 1100);
-    return () => clearInterval(t);
-  }, []);
-  return (
-    <div className="cm-field cm-field--hunt" onClick={() => api.hit()}>
-      <button
-        type="button"
-        className="cm-target"
-        style={{ left: `${p.x}%`, top: `${p.y}%` }}
-        onClick={(e) => {
-          e.stopPropagation();
-          api.add();
-          setP({ x: 8 + rnd(84), y: 10 + rnd(75) });
-        }}
-        aria-label="Objetivo"
-      >
-        ◎
-      </button>
-    </div>
-  );
-}
 
 /* ------------------------------------------------------------- 13. COLORMATCH */
 function ColorMatch({ api }: { api: ArcadeApi }) {
@@ -517,19 +430,16 @@ function ColorMatch({ api }: { api: ArcadeApi }) {
 }
 
 export const ARCADE_GAMES: ArcadeGame[] = [
-  { slug: "bot-whack", name: "Bot Whack", icon: "⛏", target: 12, reward: GAME_BOOST_TH, description: "Golpea bloques, evita virus.", help: "Haz clic en ⛏ para puntuar. Tocar ☠ cuesta una vida.", Game: BotWhack },
-  { slug: "reflex-hash", name: "Reflex Hash", icon: "⚡", target: 8, reward: GAME_BOOST_TH, description: "Reacciona cuando el nodo se ilumine.", help: "Haz clic solo cuando aparezca ¡HASH!. Adelantarte cuesta una vida.", Game: ReflexHash },
-  { slug: "node-sequence", name: "Node Sequence", icon: "🔊", target: 6, reward: GAME_BOOST_TH, description: "Repite la secuencia de nodos.", help: "Memoriza el patrón y repítelo. Un fallo cuesta una vida.", Game: NodeSequence },
-  { slug: "hash-math", name: "Hash Math", icon: "🧮", target: 10, reward: GAME_BOOST_TH, description: "Resuelve operaciones rápidas.", help: "Elige el resultado correcto. Fallar cuesta una vida.", Game: HashMath },
-  { slug: "coin-catcher", name: "Coin Catcher", icon: "🪙", target: 12, reward: GAME_BOOST_TH, description: "Atrapa las monedas que caen.", help: "Mueve el colector con el ratón o las flechas. Moneda perdida = vida.", Game: CoinCatcher },
-  { slug: "block-dodge", name: "Block Dodge", icon: "🛡", target: 15, reward: GAME_BOOST_TH, description: "Esquiva los bloques corruptos.", help: "Muévete con el ratón o las flechas. Choque = vida.", Game: BlockDodge },
-  { slug: "hex-typer", name: "Hex Typer", icon: "⌨", target: 8, reward: GAME_BOOST_TH, description: "Teclea los hashes al vuelo.", help: "Escribe el hash mostrado y pulsa enter. Error = vida.", Game: HexTyper },
-  { slug: "odd-one-out", name: "Odd One Out", icon: "🔍", target: 10, reward: GAME_BOOST_TH, description: "Encuentra la cripto distinta.", help: "Haz clic en el icono diferente. Fallar cuesta una vida.", Game: OddOneOut },
-  { slug: "coin-flash", name: "Coin Flash", icon: "✦", target: 10, reward: GAME_BOOST_TH, description: "Recuerda la moneda que parpadeó.", help: "Mira la moneda y elige cuál era. Fallar cuesta una vida.", Game: CoinFlash },
-  { slug: "precision-stop", name: "Precision Stop", icon: "🎯", target: 8, reward: GAME_BOOST_TH, description: "Detén la barra en la zona verde.", help: "Pulsa STOP dentro de la zona verde. Fuera = vida.", Game: PrecisionStop },
-  { slug: "crypto-trivia", name: "Crypto Trivia", icon: "❓", target: 8, reward: GAME_BOOST_TH, description: "Preguntas rápidas sobre cripto.", help: "Acierta 8 preguntas. Cada fallo cuesta una vida.", Game: CryptoTrivia },
-  { slug: "target-hunter", name: "Target Hunter", icon: "◎", target: 12, reward: GAME_BOOST_TH, description: "Caza el nodo que se mueve.", help: "Haz clic en el objetivo. Clic fuera = vida.", Game: TargetHunter },
-  { slug: "color-match", name: "Color Match", icon: "🎨", target: 10, reward: GAME_BOOST_TH, description: "Asocia la moneda con su color.", help: "Elige el color correcto de la moneda. Fallar cuesta una vida.", Game: ColorMatch },
+  { slug: "bot-whack", name: "Bot Whack", icon: "⛏", target: 50, reward: GAME_BOOST_TH, description: "Golpea bloques, evita virus.", help: "Haz clic en ⛏ para puntuar. Tocar ☠ cuesta una vida.", Game: BotWhack },
+  { slug: "node-sequence", name: "Node Sequence", icon: "🔊", target: 50, reward: GAME_BOOST_TH, description: "Repite la secuencia de nodos.", help: "Memoriza el patrón y repítelo. Un fallo cuesta una vida.", Game: NodeSequence },
+  { slug: "hash-math", name: "Hash Math", icon: "🧮", target: 50, reward: GAME_BOOST_TH, description: "Resuelve operaciones rápidas.", help: "Elige el resultado correcto. Fallar cuesta una vida.", Game: HashMath },
+  { slug: "coin-catcher", name: "Coin Catcher", icon: "🪙", target: 50, reward: GAME_BOOST_TH, description: "Atrapa las monedas que caen.", help: "Mueve el colector con el ratón o las flechas. Moneda perdida = vida.", Game: CoinCatcher },
+  { slug: "block-dodge", name: "Block Dodge", icon: "🛡", target: 50, reward: GAME_BOOST_TH, description: "Esquiva los bloques corruptos.", help: "Muévete con el ratón o las flechas. Choque = vida.", Game: BlockDodge },
+  { slug: "hex-typer", name: "Hex Typer", icon: "⌨", target: 50, reward: GAME_BOOST_TH, description: "Teclea los hashes al vuelo.", help: "Copia los 4 caracteres del hash (sin el 0x) y pulsa ENVIAR. Error = vida.", Game: HexTyper },
+  { slug: "odd-one-out", name: "Odd One Out", icon: "🔍", target: 50, reward: GAME_BOOST_TH, description: "Encuentra la cripto distinta.", help: "Haz clic en el icono diferente. Fallar cuesta una vida.", Game: OddOneOut },
+  { slug: "precision-stop", name: "Precision Stop", icon: "🎯", target: 50, reward: GAME_BOOST_TH, description: "Detén la barra en la zona verde.", help: "Pulsa STOP dentro de la zona verde. Fuera = vida.", Game: PrecisionStop },
+  { slug: "crypto-trivia", name: "Crypto Trivia", icon: "❓", target: 10, reward: GAME_BOOST_TH, description: "Preguntas rápidas sobre cripto.", help: "Acierta 10 preguntas. Cada fallo cuesta una vida.", Game: CryptoTrivia },
+  { slug: "color-match", name: "Color Match", icon: "🎨", target: 50, reward: GAME_BOOST_TH, description: "Asocia la moneda con su color.", help: "Elige el color correcto de la moneda. Fallar cuesta una vida.", Game: ColorMatch },
 ];
 
 export const ARCADE_MAP = Object.fromEntries(ARCADE_GAMES.map((g) => [g.slug, g]));
