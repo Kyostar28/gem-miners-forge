@@ -1436,3 +1436,79 @@ html[data-theme="white"] .cm-rackcard__ribbon { color: #fff; }
   .cm-evstats { grid-template-columns: 1fr; }
   .cm-evnode { flex-basis: 132px; }
 }
+
+/* ============================ SCROLLBARS / SLIDERS ============================ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--cm-green) var(--cm-panel-2);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, var(--cm-panel), var(--cm-panel-2));
+  border: 1px solid var(--cm-border);
+  border-radius: 2px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--cm-green), var(--cm-green-deep));
+  border: 1px solid var(--cm-green-dim);
+  border-radius: 2px;
+  box-shadow: inset 0 0 6px color-mix(in oklab, var(--cm-green) 45%, transparent);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--cm-green);
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--cm-panel-2);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 20px;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 2px;
+  border: 1px solid var(--cm-border);
+  background: linear-gradient(90deg, var(--cm-green-deep), var(--cm-panel-2));
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 18px;
+  margin-top: -6px;
+  border-radius: 2px;
+  border: 1px solid var(--cm-green);
+  background: var(--cm-green);
+  box-shadow: 0 0 10px color-mix(in oklab, var(--cm-green) 60%, transparent);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 8px;
+  border-radius: 2px;
+  border: 1px solid var(--cm-border);
+  background: linear-gradient(90deg, var(--cm-green-deep), var(--cm-panel-2));
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 18px;
+  border-radius: 2px;
+  border: 1px solid var(--cm-green);
+  background: var(--cm-green);
+  box-shadow: 0 0 10px color-mix(in oklab, var(--cm-green) 60%, transparent);
+}
