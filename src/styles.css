@@ -1392,7 +1392,7 @@ html[data-theme="white"] .cm-rackcard__ribbon { color: #fff; }
 }
 
 /* ---------- EVENTOS ACTIVOS ---------- */
-.cm-eventbox { grid-column: 1 / -1; order: 0; display: grid; gap: .9rem; }
+.cm-eventbox { grid-column: 1 / -1; display: grid; gap: .9rem; }
 .cm-evstats {
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem;
 }
