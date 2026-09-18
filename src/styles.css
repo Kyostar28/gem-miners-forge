@@ -1086,7 +1086,7 @@ body, button, input, select, textarea { font-family: var(--cm-mono); }
 .cm-invbox--slim { margin: 0; }
 .cm-invbox__body--scroll { max-height: 340px; overflow-y: auto; }
 .cm-roomhead { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
-.cm-roomsbox { grid-column: 1 / -1; display: grid; gap: .9rem; }
+.cm-roomsbox { grid-column: 1 / -1; order: -1; display: grid; gap: .9rem; }
 .cm-roomsbox .cm-tabs { flex-wrap: wrap; }
 .cm-roomcard { --cm-accent: var(--cm-green); }
 .cm-login__box--wide { max-width: 720px; width: 100%; }
@@ -1392,7 +1392,7 @@ html[data-theme="white"] .cm-rackcard__ribbon { color: #fff; }
 }
 
 /* ---------- EVENTOS ACTIVOS ---------- */
-.cm-eventbox { grid-column: 1 / -1; display: grid; gap: .9rem; }
+.cm-eventbox { grid-column: 1 / -1; order: -2; display: grid; gap: .9rem; }
 .cm-evstats {
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem;
 }
